@@ -1,6 +1,7 @@
 @Argo_HostAddress = http://localhost:5115
 
-GET {{Argo_HostAddress}}/weatherforecast/
+GET {{Argo_HostAddress}}/api/v1/portfolio
 Accept: application/json
 
 ###
+

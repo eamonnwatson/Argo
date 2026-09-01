@@ -57,7 +57,7 @@
       </div>
       <div class="actions">
         <input id="import-file" class="screen-only-file" type="file" accept="application/json,.json">
-        <button id="import-btn" class="btn dark" type="button">↑ Import</button>
+        <button id="import-btn" class="btn dark" type="button" style="display:none">↑ Import</button>
         <button id="export-btn" class="btn dark" type="button">↓ Export backup</button>
         <button id="add-project-btn" class="btn primary" type="button">＋ Add project</button>
       </div>
@@ -145,7 +145,7 @@
     (function(){
       "use strict";
 
-      var API_BASE="/api";
+      var API_BASE="/api/v1";
       var TEAM_MEMBERS=["Garrett Rowley","Jet Pineda","Korrey Mathews","Jonalyn Flores","Aprilyn Samson"];
       var PRIORITY_RANK={"Needs Triage":5,Critical:4,High:3,Medium:2,Low:1};
       var waitingSort="priority-desc";
