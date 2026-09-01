@@ -1,0 +1,154 @@
+/*
+  Argo shared styles
+  Common base rules + Argo brand theme used across Portfolio and Intake pages.
+*/
+:root {
+  --ink:#0f172a;
+  --muted:#64748b;
+  --line:#e2e8f0;
+  --paper:#fff;
+  --wash:#f3f6fa;
+  --cyan:#67e0d1;
+  --cyan-dark:#197f85;
+  --brand-violet:#4f86e8;
+  --brand-cyan:#67e0d1;
+  --brand-night:#020611;
+  --brand-gold:#f6c56c;
+  --amber:#f59e0b;
+  --red:#dc2626;
+  --green:#15803d;
+  --shadow:0 1px 3px rgba(15,23,42,.08);
+}
+
+* {
+  box-sizing:border-box;
+}
+
+body {
+  margin:0;
+  background:var(--wash);
+  color:var(--ink);
+  font-family:Inter,Aptos,"Segoe UI",Arial,sans-serif;
+  font-size:14px;
+}
+
+button,input,select,textarea {
+  font:inherit;
+}
+
+button {
+  cursor:pointer;
+}
+
+.topbar {
+  background:var(--ink);
+  color:white;
+  border-bottom:1px solid #334155;
+}
+
+.btn:hover {
+  background:#f1f5f9;
+}
+
+.btn.primary {
+  background:var(--cyan);
+  border-color:var(--cyan);
+  color:var(--ink);
+}
+
+.btn.primary:hover {
+  background:#a5f3fc;
+}
+
+.btn.dark {
+  background:#1e293b;
+  border-color:#475569;
+  color:white;
+}
+
+.btn.small {
+  padding:7px 10px;
+  font-size:12px;
+}
+
+.field {
+  display:grid;
+  gap:6px;
+}
+
+.field.full {
+  grid-column:1/-1;
+}
+
+.toast.show {
+  opacity:1;
+  transform:none;
+}
+
+:root {
+  --ink:#07101f;
+  --muted:#66738a;
+  --line:#dce3ed;
+  --wash:#f3f6fa;
+  --cyan:#67e0d1;
+  --cyan-dark:#197f85;
+  --brand-violet:#4f86e8;
+  --brand-cyan:#67e0d1;
+  --brand-night:#020611;
+  --brand-gold:#f6c56c;
+}
+
+body {
+  background:linear-gradient(180deg,#e9eef7 0,#f8fafc 270px,#f3f6fa 100%);
+}
+
+.topbar {
+  background:linear-gradient(105deg,rgba(2,6,17,.98),rgba(7,18,42,.94) 54%,rgba(11,36,68,.9));
+  border-bottom-color:rgba(103,224,209,.35);
+}
+
+.topbar::before {
+  background-image:radial-gradient(circle,rgba(255,255,255,.72) 0 1px,transparent 1.5px);
+  background-size:46px 46px;
+  opacity:.18;
+  mask-image:linear-gradient(90deg,transparent 22%,#000 68%,transparent);
+}
+
+.topbar::after {
+  border-color:rgba(246,197,108,.07);
+}
+
+.constellation-mark {
+  width:190px;
+  height:106px;
+  flex:0 0 190px;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:12px;
+  overflow:hidden;
+  background:#071126;
+  box-shadow:0 10px 30px rgba(0,0,0,.28);
+}
+
+.constellation-mark img {
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.brand-row {
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.btn.primary {
+  background:var(--brand-cyan);
+  border-color:var(--brand-cyan);
+  color:#07101f;
+}
+
+.field input:focus,.field select:focus,.field textarea:focus {
+  border-color:var(--brand-cyan);
+  box-shadow:0 0 0 3px rgba(103,224,209,.18);
+}
