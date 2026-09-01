@@ -3,11 +3,12 @@
 public class Activity
 {
     public required string Id { get; init; }
-    public required string ProjectId { get; init; } 
-    public required string WorkItemId { get; init; }
-    public required string Title { get; init; }
-    public required string Owner { get; init; }
+    public required string ProjectId { get; set; } 
+    public required string WorkItemId { get; set; }
+    public required string Title { get; set; }
+    public required string Owner { get; set; }
     public string Status { get; set; } = "Not Started";
-    public required DateTime DueDate { get; init; }
-    public required string Notes { get; init; }
+    public required DateOnly DueDate { get; set; }
+    public required string Notes { get; set; }
+    public WorkItem? WorkItem { get; set; }
 }
