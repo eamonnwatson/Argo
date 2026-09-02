@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Argo Portfolio | Data Strategy &amp; Delivery</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/portfolio.css">
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="shell">
+            <div class="brand-row">
+                <div class="constellation-mark" role="img" aria-label="Argo constellation with Canopus highlighted against deep space"><img src="assets/argo-constellation.png" alt=""></div>
+                <div>
+                    <div class="eyebrow">Data Strategy &amp; Delivery</div>
+                    <h1>Argo Portfolio</h1>
+                    <p class="subtitle"><strong>From direction to destination.</strong> One portfolio view connected to project work, dependencies, risks, issues, and decisions.</p>
+                </div>
+            </div>
+            <div class="actions">
+                <input id="import-file" class="screen-only-file" type="file" accept="application/json,.json">
+                <button id="import-btn" class="btn dark" type="button" style="display:none">↑ Import</button>
+                <button id="export-btn" class="btn dark" type="button">↓ Export backup</button>
+                <button id="add-project-btn" class="btn primary" type="button">＋ Add project</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="shell content">
+        <section id="summary" class="summary" aria-label="Portfolio summary"></section>
+        <section id="team-chart" class="team-chart" aria-label="Team workload and project health"></section>
+        <section id="board" class="board" aria-label="Project status board"></section>
+        <section id="detail" class="detail" aria-live="polite"></section>
+        <div class="footnote"><span>Changes save automatically in this browser.</span><span>Keep Argo Intake and Argo Portfolio under the same web address; use Export backup before moving browsers or computers.</span></div>
+    </main>
+
+    <dialog id="project-dialog">
+        <form id="project-form" method="dialog">
+            <div class="dialog-head">
+                <h2 id="project-dialog-title">Project</h2>
+                <p>Add or update portfolio-level information.</p>
+            </div>
+            <div class="dialog-body">
+                <input name="id" type="hidden">
+                <div class="field">
+                    <label for="project-name">Project name</label>
+                    <input id="project-name" name="name" required>
+                </div>
+                <div class="field">
+                    <label for="project-owner">Project owner</label>
+                    <input id="project-owner" name="owner" list="team-members" required>
+                    <datalist id="team-members">
+                        <option value="Unassigned">
+                    </datalist>
+                </div>
+                <div class="field">
+                    <label for="project-status">Overall status</label>
+                    <select id="project-status" name="status">
+                        <option>Waiting</option>
+                        <option>In Progress</option>
+                        <option>Done</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="project-health">Health</label>
+                    <select id="project-health" name="health">
+                        <option>Not Assessed</option>
+                        <option>On Track</option>
+                        <option>At Risk</option>
+                        <option>Blocked</option>
+                        <option>Complete</option>
+                    </select>
+                </div>
+                <div class="field" id="project-priority-field">
+                    <label for="project-priority">Waiting priority</label>
+                    <select id="project-priority" name="priority">
+                        <option>Needs Triage</option>
+                        <option>Critical</option>
+                        <option>High</option>
+                        <option selected>Medium</option>
+                        <option>Low</option>
+                    </select>
+                </div>
+                <div class="field full">
+                    <label for="project-objective">Objective</label>
+                    <textarea id="project-objective" name="objective"></textarea>
+                </div>
+                <div class="field">
+                    <label for="project-milestone">Next milestone</label>
+                    <input id="project-milestone" name="nextMilestone">
+                </div>
+                <div class="field">
+                    <label for="project-date">Target date</label>
+                    <input id="project-date" name="targetDate" type="date">
+                </div>
+            </div>
+            <div class="dialog-actions">
+                <button class="btn" type="button" data-close="project-dialog">Cancel</button>
+                <button class="btn primary" type="submit">Save project</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="work-dialog">
+        <form id="work-form" method="dialog">
+            <div class="dialog-head">
+                <h2>Work package or wave</h2>
+                <p>Define the outcome, people, inputs, milestone, and completion criteria.</p>
+            </div>
+            <div class="dialog-body">
+                <input name="id" type="hidden">
+                <input name="projectId" type="hidden">
+                <div class="field full">
+                    <label for="work-title">Work package / wave name</label>
+                    <input id="work-title" name="title" required>
+                </div>
+                <div class="field">
+                    <label for="work-owner">Owner</label>
+                    <input id="work-owner" name="owner" required>
+                </div>
+                <div class="field">
+                    <label for="work-status">Status</label>
+                    <select id="work-status" name="status">
+                        <option>Not Started</option>
+                        <option>Waiting</option>
+                        <option>In Progress</option>
+                        <option>Blocked</option>
+                        <option>Done</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="work-date">Due date</label>
+                    <input id="work-date" name="dueDate" type="date">
+                </div>
+                <div class="field">
+                    <label for="work-dependency">Blocker or dependency</label>
+                    <input id="work-dependency" name="dependency">
+                </div>
+                <div class="field full">
+                    <label for="work-purpose">Purpose / outcome</label>
+                    <textarea id="work-purpose" name="purpose"></textarea>
+                </div>
+                <div class="field full">
+                    <label for="work-participants">Participants</label>
+                    <textarea id="work-participants" name="participants" placeholder="Who needs to participate or approve?"></textarea>
+                </div>
+                <div class="field full">
+                    <label for="work-inputs">Required inputs</label>
+                    <textarea id="work-inputs" name="requiredInputs" placeholder="Samples, source files, decisions, access, or other prerequisites"></textarea>
+                </div>
+                <div class="field full">
+                    <label for="work-milestone">Milestone / deliverable</label>
+                    <textarea id="work-milestone" name="milestone"></textarea>
+                </div>
+                <div class="field full">
+                    <label for="work-done">Definition of done</label>
+                    <textarea id="work-done" name="definitionOfDone" placeholder="What must be true before this wave can be marked complete?"></textarea>
+                </div>
+            </div>
+            <div class="dialog-actions">
+                <button class="btn" type="button" data-close="work-dialog">Cancel</button>
+                <button class="btn primary" type="submit">Save work package</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="activity-dialog">
+        <form id="activity-form" method="dialog">
+            <div class="dialog-head">
+                <h2>Wave activity</h2>
+                <p>Add a trackable activity beneath the selected work package.</p>
+            </div>
+            <div class="dialog-body">
+                <input name="id" type="hidden">
+                <input name="projectId" type="hidden">
+                <input name="workItemId" type="hidden">
+                <div class="field full">
+                    <label for="activity-title">Activity</label>
+                    <input id="activity-title" name="title" required>
+                </div>
+                <div class="field">
+                    <label for="activity-owner">Owner</label>
+                    <input id="activity-owner" name="owner" required>
+                </div>
+                <div class="field">
+                    <label for="activity-status">Status</label>
+                    <select id="activity-status" name="status">
+                        <option>Not Started</option>
+                        <option>Waiting</option>
+                        <option>In Progress</option>
+                        <option>Blocked</option>
+                        <option>Done</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="activity-date">Due date</label>
+                    <input id="activity-date" name="dueDate" type="date">
+                </div>
+                <div class="field full">
+                    <label for="activity-notes">Notes</label>
+                    <textarea id="activity-notes" name="notes"></textarea>
+                </div>
+            </div>
+            <div class="dialog-actions">
+                <button class="btn" type="button" data-close="activity-dialog">Cancel</button>
+                <button class="btn primary" type="submit">Save activity</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="raid-dialog">
+        <form id="raid-form" method="dialog">
+            <div class="dialog-head">
+                <h2>RAID or decision record</h2>
+                <p>Capture what needs attention, ownership, or leadership input.</p>
+            </div>
+            <div class="dialog-body">
+                <input name="id" type="hidden">
+                <input name="projectId" type="hidden">
+                <div class="field">
+                    <label for="raid-type">Type</label>
+                    <select id="raid-type" name="type">
+                        <option>Risk</option>
+                        <option>Assumption</option>
+                        <option>Issue</option>
+                        <option>Dependency</option>
+                        <option>Decision</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="raid-owner">Owner</label>
+                    <input id="raid-owner" name="owner" required>
+                </div>
+                <div class="field full">
+                    <label for="raid-description">Description</label>
+                    <textarea id="raid-description" name="description" required></textarea>
+                </div>
+                <div class="field">
+                    <label for="raid-date">Due date</label>
+                    <input id="raid-date" name="dueDate" type="date">
+                </div>
+            </div>
+            <div class="dialog-actions">
+                <button class="btn" type="button" data-close="raid-dialog">Cancel</button>
+                <button class="btn primary" type="submit">Save record</button>
+            </div>
+        </form>
+    </dialog>
+
+    <div id="toast" class="toast" role="status"></div>
+
+    <script src="js/common.js"></script>
+    <script src="js/portfolio.js"></script>
+</body>
+
+</html>

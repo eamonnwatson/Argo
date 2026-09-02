@@ -17,7 +17,7 @@
     el.classList.add("show");
     setTimeout(function () {
       el.classList.remove("show");
-    }, 1800);
+    }, 5000);
   }
 
   global.Argo = {
