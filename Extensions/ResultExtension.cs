@@ -31,5 +31,22 @@ public static class ResultExtension
 
         return Results.BadRequest(result.Errors[0].Message);
     }
+    public static async Task<IResult> ToResultsAsync<T>(this Task<Result<T>> resultTask)
+    {
+        var result = await resultTask;
+        return result.ToResults();
+    }
+
+    public static async Task<IResult> ToResultsAsync(this Task<Result> resultTask)
+    {
+        var result = await resultTask;
+        return result.ToResults();
+    }
+
+    public static async Task<Result<TOut>> MapAsync<T, TOut>(this Task<Result<T>> resultTask, Func<T, TOut> mapper)
+    {
+        var result = await resultTask;
+        return result.Map(mapper);
+    }
 
 }
