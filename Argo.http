@@ -1,5 +1,174 @@
 @Argo_HostAddress = http://localhost:5115
 
+### Get portfolio (all projects, work items, activities)
 GET {{Argo_HostAddress}}/api/v1/portfolio
 Accept: application/json
 
+### Ingest portfolio data
+POST {{Argo_HostAddress}}/api/v1/portfolio/ingest
+Accept: application/json
+
+### Get users
+GET {{Argo_HostAddress}}/api/v1/users
+Accept: application/json
+
+### Get users (project managers only)
+GET {{Argo_HostAddress}}/api/v1/users?projectManagersOnly=true
+Accept: application/json
+
+### Create project
+POST {{Argo_HostAddress}}/api/v1/projects
+Content-Type: application/json
+
+{
+  "name": "New Project",
+  "owner": "Jane Doe",
+  "status": "Active",
+  "health": "Green",
+  "priority": "High",
+  "objective": "Deliver value",
+  "nextMilestone": "Kickoff",
+  "targetDate": "2025-12-31"
+}
+
+### Update project
+PUT {{Argo_HostAddress}}/api/v1/projects/{{projectId}}
+Content-Type: application/json
+
+{
+  "id": "{{projectId}}",
+  "name": "Updated Project",
+  "owner": "Jane Doe",
+  "status": "Active",
+  "health": "Green",
+  "priority": "High",
+  "objective": "Deliver value",
+  "nextMilestone": "Kickoff",
+  "targetDate": "2025-12-31",
+  "sourceRequestId": "",
+  "submittedAt": "2025-01-01T00:00:00Z"
+}
+
+### Delete project
+DELETE {{Argo_HostAddress}}/api/v1/projects/{{projectId}}
+
+### Create work item
+POST {{Argo_HostAddress}}/api/v1/workitems
+Content-Type: application/json
+
+{
+  "projectId": "{{projectId}}",
+  "title": "New Work Item",
+  "owner": "Jane Doe",
+  "status": "Not Started",
+  "dueDate": "2025-12-31",
+  "dependency": "",
+  "purpose": "",
+  "participants": "",
+  "requiredInputs": "",
+  "milestone": "",
+  "definitionOfDone": ""
+}
+
+### Update work item
+PUT {{Argo_HostAddress}}/api/v1/workitems/{{workItemId}}
+Content-Type: application/json
+
+{
+  "id": "{{workItemId}}",
+  "projectId": "{{projectId}}",
+  "title": "Updated Work Item",
+  "owner": "Jane Doe",
+  "status": "In Progress",
+  "dueDate": "2025-12-31",
+  "dependency": "",
+  "purpose": "",
+  "participants": "",
+  "requiredInputs": "",
+  "milestone": "",
+  "definitionOfDone": ""
+}
+
+### Create activity
+POST {{Argo_HostAddress}}/api/v1/activities
+Content-Type: application/json
+
+{
+  "projectId": "{{projectId}}",
+  "workItemId": "{{workItemId}}",
+  "title": "New Activity",
+  "owner": "Jane Doe",
+  "status": "Not Started",
+  "dueDate": "2025-12-31",
+  "notes": ""
+}
+
+### Update activity
+PUT {{Argo_HostAddress}}/api/v1/activities/{{activityId}}
+Content-Type: application/json
+
+{
+  "id": "{{activityId}}",
+  "projectId": "{{projectId}}",
+  "workItemId": "{{workItemId}}",
+  "title": "Updated Activity",
+  "owner": "Jane Doe",
+  "status": "In Progress",
+  "dueDate": "2025-12-31",
+  "notes": ""
+}
+
+### Create RAID item
+POST {{Argo_HostAddress}}/api/v1/raid
+Content-Type: application/json
+
+{
+  "projectId": "{{projectId}}",
+  "type": "Risk",
+  "description": "New risk",
+  "owner": "Jane Doe",
+  "dueDate": "2025-12-31"
+}
+
+### Update RAID item
+PUT {{Argo_HostAddress}}/api/v1/raid/{{raidItemId}}
+Content-Type: application/json
+
+{
+  "id": "{{raidItemId}}",
+  "projectId": "{{projectId}}",
+  "type": "Risk",
+  "description": "Updated risk",
+  "owner": "Jane Doe",
+  "dueDate": "2025-12-31"
+}
+
+### Save intake submission
+POST {{Argo_HostAddress}}/api/v1/intake-submissions
+Content-Type: application/json
+
+{
+  "artifactType": "IntakeSubmission",
+  "schemaVersion": 1,
+  "status": "Submitted",
+  "requestId": "REQ-0001",
+  "updatedAt": "2025-01-01T00:00:00Z",
+  "submittedAt": "2025-01-01T00:00:00Z",
+  "request": {
+    "requestId": "REQ-0001",
+    "requesterName": "Jane Doe",
+    "department": "IT",
+    "requesterContact": "jane.doe@example.com",
+    "businessSponsor": "John Smith",
+    "businessOwner": "John Smith",
+    "additionalStakeholders": "",
+    "requestTitle": "New Request",
+    "requestType": "Project",
+    "relatedProject": "",
+    "requestDescription": "",
+    "businessProblem": "",
+    "desiredOutcome": "",
+    "successMeasures": "",
+    "currentProcess": ""
+  }
+}

@@ -8,20 +8,39 @@ using System.Text.Json;
 
 namespace Argo.Services;
 
+/// <summary>
+/// Implements Argo application operations for project portfolio management,
+/// intake persistence, and user retrieval.
+/// </summary>
+/// <param name="dbContext">The EF Core context used for all persistence operations.</param>
+/// <param name="httpContextAccessor">Provides access to the current request user for authorization checks.</param>
 public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpContextAccessor) : IArgoService
 {
     private readonly ArgoDbContext dbContext = dbContext;
     private readonly HttpContext? httpContext = httpContextAccessor.HttpContext;
 
-    public async Task<Result<InjestResult>> InjectAsync()
+    /// <summary>
+    /// Executes the current ingestion workflow.
+    /// </summary>
+    /// <returns>
+    /// A result containing ingestion summary values.
+    /// </returns>
+    /// <remarks>
+    /// This implementation currently returns a placeholder result and performs no external I/O.
+    /// </remarks>
+    public async Task<Result<IngestResult>> InjectAsync()
     {
-        return Result.Ok(new InjestResult(0, ""));
+        return Result.Ok(new IngestResult(0, ""));
     }
 
+    /// <summary>
+    /// Retrieves all projects and eagerly loads their related work items, activities, and RAID entries.
+    /// </summary>
+    /// <returns>A result containing the project hierarchy when authorization succeeds.</returns>
     public async Task<Result<IReadOnlyCollection<Project>>> GetProjectsAsync()
     {
         if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthroizedError);
+            return Result.Fail(APIErrors.UnauthorizedError);
 
         var projects = await dbContext.Projects.AsNoTracking()
             .Include(p => p.WorkItems)
@@ -32,10 +51,17 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
         return projects;
     }
 
+    /// <summary>
+    /// Retrieves users from the data store, optionally filtered to project managers.
+    /// </summary>
+    /// <param name="projectManagersOnly">
+    /// <see langword="true"/> to include only users flagged as project managers.
+    /// </param>
+    /// <returns>A result containing user records sorted by display name.</returns>
     public async Task<Result<IReadOnlyCollection<User>>> GetUsersAsync(bool projectManagersOnly = false)
     {
         if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthroizedError);
+            return Result.Fail(APIErrors.UnauthorizedError);
 
         var query = dbContext.Users.AsNoTracking();
 
@@ -49,10 +75,15 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
         return users;
     }
 
+    /// <summary>
+    /// Creates a project using values supplied by the client.
+    /// </summary>
+    /// <param name="dto">The project creation payload.</param>
+    /// <returns>A result containing the created project DTO.</returns>
     public async Task<Result<ProjectDTO>> CreateProject(ProjectCreateDTO dto)
     {
         if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthroizedError);
+            return Result.Fail(APIErrors.UnauthorizedError);
 
         var id = await GenerateUniqueIdAsync("PRJ", async candidate => await dbContext.Projects.AnyAsync(p => p.Id == candidate));
         var submittedAt = DateTime.Now;
@@ -77,10 +108,16 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
         return new ProjectDTO(id, dto.Name, dto.Owner, dto.Status, dto.Health, dto.Priority, dto.Objective, dto.NextMilestone, dto.TargetDate, string.Empty, submittedAt);
     }
 
+    /// <summary>
+    /// Updates mutable fields of an existing project.
+    /// </summary>
+    /// <param name="id">The project identifier.</param>
+    /// <param name="dto">The values to apply to the existing project record.</param>
+    /// <returns>A result indicating success or the reason for failure.</returns>
     public async Task<Result> UpdateProject(string id, ProjectDTO dto)
     {
         if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthroizedError);
+            return Result.Fail(APIErrors.UnauthorizedError);
 
         var existing = await dbContext.Projects.FindAsync(id);
         if (existing is null)
@@ -99,19 +136,29 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
         return Result.Ok();
     }
 
+    /// <summary>
+    /// Deletes a project by identifier.
+    /// </summary>
+    /// <param name="id">The project identifier.</param>
+    /// <returns>A result indicating whether the delete operation completed.</returns>
     public async Task<Result> DeleteProject(string id)
     {
         if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthroizedError);
+            return Result.Fail(APIErrors.UnauthorizedError);
 
         await dbContext.Projects.Where(p => p.Id == id).ExecuteDeleteAsync();
         return Result.Ok();
     }
 
+    /// <summary>
+    /// Creates a work item and stores it in the data store.
+    /// </summary>
+    /// <param name="dto">The work item creation payload.</param>
+    /// <returns>A result containing the created work item DTO.</returns>
     public async Task<Result<WorkItemDTO>> CreateWorkItem(WorkItemCreateDTO dto)
     {
         if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthroizedError);
+            return Result.Fail(APIErrors.UnauthorizedError);
 
         var id = await GenerateUniqueIdAsync("WI", async candidate => await dbContext.WorkItems.AnyAsync(w => w.Id == candidate));
 
@@ -136,10 +183,16 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
         return new WorkItemDTO(id, dto.ProjectId, dto.Title, dto.Owner, dto.Status, dto.DueDate, dto.Dependency, dto.Purpose, dto.Participants, dto.RequiredInputs, dto.Milestone, dto.DefinitionOfDone);
     }
 
+    /// <summary>
+    /// Updates mutable fields of an existing work item.
+    /// </summary>
+    /// <param name="id">The work item identifier.</param>
+    /// <param name="dto">The values to apply to the existing work item record.</param>
+    /// <returns>A result indicating success or the reason for failure.</returns>
     public async Task<Result> UpdateWorkItem(string id, WorkItemDTO dto)
     {
         if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthroizedError);
+            return Result.Fail(APIErrors.UnauthorizedError);
 
         var existing = await dbContext.WorkItems.FindAsync(id);
         if (existing is null)
@@ -161,10 +214,15 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
         return Result.Ok();
     }
 
+    /// <summary>
+    /// Creates an activity and stores it in the data store.
+    /// </summary>
+    /// <param name="dto">The activity creation payload.</param>
+    /// <returns>A result containing the created activity DTO.</returns>
     public async Task<Result<ActivityDTO>> CreateActivity(ActivityCreateDTO dto)
     {
         if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthroizedError);
+            return Result.Fail(APIErrors.UnauthorizedError);
 
         var id = await GenerateUniqueIdAsync("ACT", async candidate => await dbContext.Activities.AnyAsync(a => a.Id == candidate));
 
@@ -185,10 +243,16 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
         return new ActivityDTO(id, dto.ProjectId, dto.WorkItemId, dto.Title, dto.Owner, dto.Status, dto.DueDate, dto.Notes);
     }
 
+    /// <summary>
+    /// Updates mutable fields of an existing activity.
+    /// </summary>
+    /// <param name="id">The activity identifier.</param>
+    /// <param name="dto">The values to apply to the existing activity record.</param>
+    /// <returns>A result indicating success or the reason for failure.</returns>
     public async Task<Result> UpdateActivity(string id, ActivityDTO dto)
     {
         if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthroizedError);
+            return Result.Fail(APIErrors.UnauthorizedError);
 
         var existing = await dbContext.Activities.FindAsync(id);
         if (existing is null)
@@ -206,10 +270,15 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
         return Result.Ok();
     }
 
+    /// <summary>
+    /// Creates a RAID item and stores it in the data store.
+    /// </summary>
+    /// <param name="dto">The RAID item creation payload.</param>
+    /// <returns>A result containing the created RAID item DTO.</returns>
     public async Task<Result<RaidItemDTO>> CreateRaidItem(RaidItemCreateDTO dto)
     {
         if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthroizedError);
+            return Result.Fail(APIErrors.UnauthorizedError);
 
         var id = await GenerateUniqueIdAsync("RAID", async candidate => await dbContext.RaidItems.AnyAsync(r => r.Id == candidate));
 
@@ -228,10 +297,16 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
         return new RaidItemDTO(id, dto.ProjectId, dto.Type, dto.Description, dto.Owner, dto.DueDate);
     }
 
+    /// <summary>
+    /// Updates mutable fields of an existing RAID item.
+    /// </summary>
+    /// <param name="id">The RAID item identifier.</param>
+    /// <param name="dto">The values to apply to the existing RAID item record.</param>
+    /// <returns>A result indicating success or the reason for failure.</returns>
     public async Task<Result> UpdateRaidItem(string id, RaidItemDTO dto)
     {
         if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthroizedError);
+            return Result.Fail(APIErrors.UnauthorizedError);
 
         var existing = await dbContext.RaidItems.FindAsync(id);
         if (existing is null)
@@ -247,6 +322,15 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
         return Result.Ok();
     }
 
+    /// <summary>
+    /// Persists the intake submission payload and creates a default triage project.
+    /// </summary>
+    /// <param name="dto">The intake submission envelope to map into a project record.</param>
+    /// <returns>A result containing the generated request and project identifiers.</returns>
+    /// <remarks>
+    /// Intake details are serialized and stored on the project record so the original
+    /// submission remains available during portfolio triage.
+    /// </remarks>
     public async Task<Result<IntakeSubmissionResultDTO>> SaveIntakeSubmission(IntakeSubmissionDTO dto)
     {
         var request = dto.Request;
@@ -277,6 +361,16 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
         return new IntakeSubmissionResultDTO(requestId, newProjectId);
     }
 
+    /// <summary>
+    /// Generates an identifier with the specified prefix and verifies uniqueness via a caller-provided lookup.
+    /// </summary>
+    /// <param name="prefix">The identifier prefix representing the entity type.</param>
+    /// <param name="existsAsync">A delegate that returns whether a candidate identifier already exists.</param>
+    /// <param name="maxAttempts">The maximum number of candidate generation attempts.</param>
+    /// <returns>A unique identifier candidate.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when a unique identifier cannot be generated within <paramref name="maxAttempts"/> attempts.
+    /// </exception>
     private static async Task<string> GenerateUniqueIdAsync(string prefix, Func<string, Task<bool>> existsAsync, int maxAttempts = 5)
     {
         for (var attempt = 0; attempt < maxAttempts; attempt++)
@@ -289,6 +383,16 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
         throw new InvalidOperationException($"Could not generate a unique id with prefix '{prefix}' after {maxAttempts} attempts.");
     }
 
+    /// <summary>
+    /// Validates that the current authenticated Windows user exists in the Argo user table.
+    /// </summary>
+    /// <returns>
+    /// <see langword="true"/> when a matching user record exists; otherwise, <see langword="false"/>.
+    /// </returns>
+    /// <remarks>
+    /// Domain-qualified identity names are normalized to the account name segment
+    /// before comparison with stored <c>DomainID</c> values.
+    /// </remarks>
     private async Task<bool> CheckAuthorized()
     {
         var user = httpContext?.User?.Identity?.Name;
@@ -305,4 +409,9 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
     }
 }
 
-public record InjestResult(int Count, string FirstProjectId);
+/// <summary>
+/// Represents a summary of an ingestion operation.
+/// </summary>
+/// <param name="Count">The number of records processed.</param>
+/// <param name="FirstProjectId">The first created project identifier for the operation.</param>
+public record IngestResult(int Count, string FirstProjectId);
