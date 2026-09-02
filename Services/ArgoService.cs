@@ -1,4 +1,4 @@
-﻿using Argo.Data;
+using Argo.Data;
 using Argo.DTO;
 using Argo.Extensions;
 using Argo.Models;
@@ -32,52 +32,68 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
         return projects;
     }
 
-    public async Task<Result<IReadOnlyCollection<User>>> GetUsersAsync()
+    public async Task<Result<IReadOnlyCollection<User>>> GetUsersAsync(bool projectManagersOnly = false)
     {
         if (!CheckAuthorized().Result)
             return Result.Fail(APIErrors.UnauthroizedError);
 
-        var users = await dbContext.Users.AsNoTracking()
+        var query = dbContext.Users.AsNoTracking();
+
+        if (projectManagersOnly)
+            query = query.Where(u => u.IsProjectManager);
+
+        var users = await query
             .OrderBy(u => u.DisplayName)
             .ToListAsync();
 
         return users;
     }
 
-    public async Task<Result> SaveProject(string id, ProjectDTO dto)
+    public async Task<Result<ProjectDTO>> CreateProject(ProjectCreateDTO dto)
+    {
+        if (!CheckAuthorized().Result)
+            return Result.Fail(APIErrors.UnauthroizedError);
+
+        var id = await GenerateUniqueIdAsync("PRJ", async candidate => await dbContext.Projects.AnyAsync(p => p.Id == candidate));
+        var submittedAt = DateTime.Now;
+
+        dbContext.Projects.Add(new Project
+        {
+            Id = id,
+            Name = dto.Name,
+            Owner = dto.Owner,
+            Status = dto.Status,
+            Health = dto.Health,
+            Priority = dto.Priority,
+            Objective = dto.Objective,
+            NextMilestone = dto.NextMilestone,
+            TargetDate = dto.TargetDate,
+            SourceRequestId = string.Empty,
+            SubmittedAt = submittedAt
+        });
+
+        await dbContext.SaveChangesAsync();
+
+        return new ProjectDTO(id, dto.Name, dto.Owner, dto.Status, dto.Health, dto.Priority, dto.Objective, dto.NextMilestone, dto.TargetDate, string.Empty, submittedAt);
+    }
+
+    public async Task<Result> UpdateProject(string id, ProjectDTO dto)
     {
         if (!CheckAuthorized().Result)
             return Result.Fail(APIErrors.UnauthroizedError);
 
         var existing = await dbContext.Projects.FindAsync(id);
         if (existing is null)
-        {
-            dbContext.Projects.Add(new Project
-            {
-                Id = id,
-                Name = dto.Name,
-                Owner = dto.Owner,
-                Status = dto.Status,
-                Health = dto.Health,
-                Priority = dto.Priority,
-                Objective = dto.Objective,
-                NextMilestone = dto.NextMilestone,
-                TargetDate = dto.TargetDate,
-                SourceRequestId = string.Empty,
-                SubmittedAt = DateTime.Now
-            });
-        } 
-        else
-        {
-            existing.Name = dto.Name;
-            existing.Owner = dto.Owner;
-            existing.Status = dto.Status;
-            existing.Health = dto.Health;
-            existing.Priority = dto.Priority;
-            existing.Objective = dto.Objective;
-            existing.NextMilestone = dto.NextMilestone;
-            existing.TargetDate = dto.TargetDate;
-        }
+            return Result.Fail(APIErrors.NotFoundError($"Project {id} was not found"));
+
+        existing.Name = dto.Name;
+        existing.Owner = dto.Owner;
+        existing.Status = dto.Status;
+        existing.Health = dto.Health;
+        existing.Priority = dto.Priority;
+        existing.Objective = dto.Objective;
+        existing.NextMilestone = dto.NextMilestone;
+        existing.TargetDate = dto.TargetDate;
 
         await dbContext.SaveChangesAsync();
         return Result.Ok();
@@ -92,133 +108,156 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
         return Result.Ok();
     }
 
-    public async Task<Result> SaveWorkItem(string id, WorkItemDTO dto)
+    public async Task<Result<WorkItemDTO>> CreateWorkItem(WorkItemCreateDTO dto)
+    {
+        if (!CheckAuthorized().Result)
+            return Result.Fail(APIErrors.UnauthroizedError);
+
+        var id = await GenerateUniqueIdAsync("WI", async candidate => await dbContext.WorkItems.AnyAsync(w => w.Id == candidate));
+
+        await dbContext.WorkItems.AddAsync(new WorkItem
+        {
+            Id = id,
+            ProjectId = dto.ProjectId,
+            Title = dto.Title,
+            Owner = dto.Owner,
+            Status = dto.Status,
+            DueDate = dto.DueDate,
+            Dependency = dto.Dependency,
+            Purpose = dto.Purpose,
+            Participants = dto.Participants,
+            RequiredInputs = dto.RequiredInputs,
+            Milestone = dto.Milestone,
+            DefinitionOfDone = dto.DefinitionOfDone
+        });
+
+        await dbContext.SaveChangesAsync();
+
+        return new WorkItemDTO(id, dto.ProjectId, dto.Title, dto.Owner, dto.Status, dto.DueDate, dto.Dependency, dto.Purpose, dto.Participants, dto.RequiredInputs, dto.Milestone, dto.DefinitionOfDone);
+    }
+
+    public async Task<Result> UpdateWorkItem(string id, WorkItemDTO dto)
     {
         if (!CheckAuthorized().Result)
             return Result.Fail(APIErrors.UnauthroizedError);
 
         var existing = await dbContext.WorkItems.FindAsync(id);
         if (existing is null)
-        {
-            await dbContext.WorkItems.AddAsync(new WorkItem
-            { 
-                Id = id,
-                ProjectId = dto.ProjectId,
-                Title = dto.Title,
-                Owner = dto.Owner,
-                Status = dto.Status,
-                DueDate = dto.DueDate,
-                Dependency = dto.Dependency,
-                Purpose = dto.Purpose,
-                Participants = dto.Participants,
-                RequiredInputs = dto.RequiredInputs,
-                Milestone = dto.Milestone,
-                DefinitionOfDone = dto.DefinitionOfDone
-            });
-        }
-        else
-        {
-            existing.ProjectId = dto.ProjectId;
-            existing.Title = dto.Title;
-            existing.Owner = dto.Owner;
-            existing.Status = dto.Status;
-            existing.DueDate = dto.DueDate;
-            existing.Dependency = dto.Dependency;
-            existing.Purpose = dto.Purpose;
-            existing.Participants = dto.Participants;
-            existing.RequiredInputs = dto.RequiredInputs;
-            existing.Milestone = dto.Milestone;
-            existing.DefinitionOfDone = dto.DefinitionOfDone;
-        }
+            return Result.Fail(APIErrors.NotFoundError($"Work item {id} was not found"));
+
+        existing.ProjectId = dto.ProjectId;
+        existing.Title = dto.Title;
+        existing.Owner = dto.Owner;
+        existing.Status = dto.Status;
+        existing.DueDate = dto.DueDate;
+        existing.Dependency = dto.Dependency;
+        existing.Purpose = dto.Purpose;
+        existing.Participants = dto.Participants;
+        existing.RequiredInputs = dto.RequiredInputs;
+        existing.Milestone = dto.Milestone;
+        existing.DefinitionOfDone = dto.DefinitionOfDone;
 
         await dbContext.SaveChangesAsync();
         return Result.Ok();
     }
 
-    public async Task<Result> SaveActivity(string id, ActivityDTO dto)
+    public async Task<Result<ActivityDTO>> CreateActivity(ActivityCreateDTO dto)
+    {
+        if (!CheckAuthorized().Result)
+            return Result.Fail(APIErrors.UnauthroizedError);
+
+        var id = await GenerateUniqueIdAsync("ACT", async candidate => await dbContext.Activities.AnyAsync(a => a.Id == candidate));
+
+        await dbContext.Activities.AddAsync(new Activity
+        {
+            Id = id,
+            ProjectId = dto.ProjectId,
+            Title = dto.Title,
+            Owner = dto.Owner,
+            Status = dto.Status,
+            DueDate = dto.DueDate,
+            Notes = dto.Notes,
+            WorkItemId = dto.WorkItemId
+        });
+
+        await dbContext.SaveChangesAsync();
+
+        return new ActivityDTO(id, dto.ProjectId, dto.WorkItemId, dto.Title, dto.Owner, dto.Status, dto.DueDate, dto.Notes);
+    }
+
+    public async Task<Result> UpdateActivity(string id, ActivityDTO dto)
     {
         if (!CheckAuthorized().Result)
             return Result.Fail(APIErrors.UnauthroizedError);
 
         var existing = await dbContext.Activities.FindAsync(id);
         if (existing is null)
-        {
-            await dbContext.Activities.AddAsync(new Activity
-            {
-                Id = id,
-                ProjectId = dto.ProjectId,
-                Title = dto.Title,
-                Owner = dto.Owner,
-                Status = dto.Status,
-                DueDate = dto.DueDate,
-                Notes = dto.Notes,
-                WorkItemId = dto.WorkItemId
-            });
-        }
-        else
-        {
-            existing.ProjectId = dto.ProjectId;
-            existing.Title = dto.Title;
-            existing.Owner = dto.Owner;
-            existing.Status = dto.Status;
-            existing.DueDate = dto.DueDate;
-            existing.Notes = dto.Notes;
-            existing.WorkItemId = dto.WorkItemId;
-        }
+            return Result.Fail(APIErrors.NotFoundError($"Activity {id} was not found"));
+
+        existing.ProjectId = dto.ProjectId;
+        existing.Title = dto.Title;
+        existing.Owner = dto.Owner;
+        existing.Status = dto.Status;
+        existing.DueDate = dto.DueDate;
+        existing.Notes = dto.Notes;
+        existing.WorkItemId = dto.WorkItemId;
 
         await dbContext.SaveChangesAsync();
         return Result.Ok();
     }
 
-    public async Task<Result> SaveRaidItem(string id, RaidItemDTO dto)
+    public async Task<Result<RaidItemDTO>> CreateRaidItem(RaidItemCreateDTO dto)
+    {
+        if (!CheckAuthorized().Result)
+            return Result.Fail(APIErrors.UnauthroizedError);
+
+        var id = await GenerateUniqueIdAsync("RAID", async candidate => await dbContext.RaidItems.AnyAsync(r => r.Id == candidate));
+
+        await dbContext.RaidItems.AddAsync(new RaidItem
+        {
+            Id = id,
+            ProjectId = dto.ProjectId,
+            Description = dto.Description,
+            DueDate = dto.DueDate,
+            Owner = dto.Owner,
+            Type = dto.Type
+        });
+
+        await dbContext.SaveChangesAsync();
+
+        return new RaidItemDTO(id, dto.ProjectId, dto.Type, dto.Description, dto.Owner, dto.DueDate);
+    }
+
+    public async Task<Result> UpdateRaidItem(string id, RaidItemDTO dto)
     {
         if (!CheckAuthorized().Result)
             return Result.Fail(APIErrors.UnauthroizedError);
 
         var existing = await dbContext.RaidItems.FindAsync(id);
         if (existing is null)
-        {
-            await dbContext.RaidItems.AddAsync(new RaidItem
-            {
-                Id = id,
-                ProjectId = dto.ProjectId,
-                Description = dto.Description,
-                DueDate = dto.DueDate,
-                Owner = dto.Owner,
-                Type = dto.Type
-            });
-        }
-        else
-        {
-            existing.ProjectId = dto.ProjectId;
-            existing.Owner = dto.Owner;
-            existing.DueDate = dto.DueDate;
-            existing.Type = dto.Type;
-            existing.Description = dto.Description;
-        }
+            return Result.Fail(APIErrors.NotFoundError($"RAID item {id} was not found"));
+
+        existing.ProjectId = dto.ProjectId;
+        existing.Owner = dto.Owner;
+        existing.DueDate = dto.DueDate;
+        existing.Type = dto.Type;
+        existing.Description = dto.Description;
 
         await dbContext.SaveChangesAsync();
         return Result.Ok();
     }
-    public async Task<Result<InjestResult>> SaveIntakeSubmission(IntakeSubmissionDTO dto)
-    {
-        if (string.IsNullOrWhiteSpace(dto.RequestId))
-            return Result.Fail("RequestId is required");
 
+    public async Task<Result<IntakeSubmissionResultDTO>> SaveIntakeSubmission(IntakeSubmissionDTO dto)
+    {
         var request = dto.Request;
 
-        var existing = await dbContext.Projects.Where(p => p.SourceRequestId == dto.RequestId).FirstOrDefaultAsync();
-        if (existing is not null)
-            return Result.Fail("Project already exists");
-
-        var existingProjectIds = await dbContext.Projects.Select(p => p.Id).ToListAsync();
-
-        var newId = NextId("PRJ", existingProjectIds);
+        var requestId = await GenerateUniqueIdAsync("REQ", async candidate => await dbContext.Projects.AnyAsync(p => p.SourceRequestId == candidate));
+        var newProjectId = await GenerateUniqueIdAsync("PRJ", async candidate => await dbContext.Projects.AnyAsync(p => p.Id == candidate));
         var title = string.IsNullOrWhiteSpace(request.RequestTitle) ? "Untitled request" : request.RequestTitle;
 
         var project = new Project
         {
-            Id = newId,
+            Id = newProjectId,
             Name = title,
             Owner = "Unassigned",
             Status = "Waiting",
@@ -227,7 +266,7 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
             Objective = request.DesiredOutcome ?? request.BusinessProblem ?? request.RequestDescription ?? "Review the submitted business request",
             NextMilestone = "Review and triage request",
             TargetDate = DateOnly.Parse(request.DesiredDate),
-            SourceRequestId = dto.RequestId,
+            SourceRequestId = requestId,
             SubmittedAt = DateTime.Now,
             IntakeDetails = JsonSerializer.Serialize(dto),
         };
@@ -235,19 +274,19 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
         await dbContext.Projects.AddAsync(project);
         await dbContext.SaveChangesAsync();
 
-        return new InjestResult(1, newId);
+        return new IntakeSubmissionResultDTO(requestId, newProjectId);
     }
 
-    private static string NextId(string prefix, IEnumerable<string> ids)
+    private static async Task<string> GenerateUniqueIdAsync(string prefix, Func<string, Task<bool>> existsAsync, int maxAttempts = 5)
     {
-        var max = 0;
-        foreach (var id in ids)
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
         {
-            var lastPart = id.Split('-').LastOrDefault();
-            if (lastPart is not null && int.TryParse(lastPart, out var n) && n > max) 
-                max = n;
+            var candidate = IdGenerator.New(prefix);
+            if (!await existsAsync(candidate))
+                return candidate;
         }
-        return $"{prefix}-{(max + 1).ToString().PadLeft(3, '0')}";
+
+        throw new InvalidOperationException($"Could not generate a unique id with prefix '{prefix}' after {maxAttempts} attempts.");
     }
 
     private async Task<bool> CheckAuthorized()

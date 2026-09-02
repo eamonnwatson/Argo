@@ -1,3 +1,3 @@
 namespace Argo.DTO;
 
-public record UserDTO(string DomainID, string DisplayName);
+public record UserDTO(string DomainID, string DisplayName, bool IsProjectManager);

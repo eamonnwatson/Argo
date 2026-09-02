@@ -79,17 +79,23 @@ public static class ApiEndpoints
             return result.ToResults();
         });
 
-        api.MapGet("/users", async (IArgoService argoService) =>
+        api.MapGet("/users", async (bool? projectManagersOnly, IArgoService argoService) =>
         {
-            var result = (await argoService.GetUsersAsync())
-                            .Map(users => users.Select(u => new UserDTO(u.DomainID, u.DisplayName)).ToList());
+            var result = (await argoService.GetUsersAsync(projectManagersOnly ?? false))
+                            .Map(users => users.Select(u => new UserDTO(u.DomainID, u.DisplayName, u.IsProjectManager)).ToList());
 
+            return result.ToResults();
+        });
+
+        api.MapPost("/projects", async (ProjectCreateDTO dto, IArgoService argoService) =>
+        {
+            var result = await argoService.CreateProject(dto);
             return result.ToResults();
         });
 
         api.MapPut("/projects/{id}", async (string id, ProjectDTO dto, IArgoService argoService) =>
         {
-            var result = await argoService.SaveProject(id, dto);
+            var result = await argoService.UpdateProject(id, dto);
             return result.ToResults();
         });
 
@@ -99,21 +105,39 @@ public static class ApiEndpoints
             return result.ToResults();
         });
 
+        api.MapPost("/workitems", async (WorkItemCreateDTO dto, IArgoService argoService) =>
+        {
+            var result = await argoService.CreateWorkItem(dto);
+            return result.ToResults();
+        });
+
         api.MapPut("/workitems/{id}", async (string id, WorkItemDTO dto, IArgoService argoService) =>
         {
-            var result = await argoService.SaveWorkItem(id, dto);
+            var result = await argoService.UpdateWorkItem(id, dto);
+            return result.ToResults();
+        });
+
+        api.MapPost("/activities", async (ActivityCreateDTO dto, IArgoService argoService) =>
+        {
+            var result = await argoService.CreateActivity(dto);
             return result.ToResults();
         });
 
         api.MapPut("/activities/{id}", async (string id, ActivityDTO dto, IArgoService argoService) =>
         {
-            var result = await argoService.SaveActivity(id, dto);
+            var result = await argoService.UpdateActivity(id, dto);
+            return result.ToResults();
+        });
+
+        api.MapPost("/raid", async (RaidItemCreateDTO dto, IArgoService argoService) =>
+        {
+            var result = await argoService.CreateRaidItem(dto);
             return result.ToResults();
         });
 
         api.MapPut("/raid/{id}", async (string id, RaidItemDTO dto, IArgoService argoService) =>
         {
-            var result = await argoService.SaveRaidItem(id, dto);
+            var result = await argoService.UpdateRaidItem(id, dto);
             return result.ToResults();
         });
 
