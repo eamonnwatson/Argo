@@ -294,10 +294,15 @@
                 } catch (parseError) { }
                 throw new Error(errorMessage);
             }
+            var result = await response.json();
+            exported.requestId = result.requestId;
+            form.elements.requestId.value = result.requestId;
             localStorage.setItem(STORAGE_KEY, JSON.stringify(exported));
             updateMeta("Submitted for triage");
+            document.getElementById("request-id-pill")
+                .textContent = result.requestId;
             document.getElementById("submitted-request-id")
-                .textContent = exported.requestId;
+                .textContent = result.requestId;
             document.getElementById("submitted-title")
                 .textContent = exported.request.requestTitle || "Untitled request";
             document.getElementById("submission-dialog")

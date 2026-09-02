@@ -103,7 +103,7 @@
     }
     async function loadTeamMembers() {
         try {
-            var users = await apiGet("/users");
+            var users = await apiGet("/users?projectManagersOnly=true");
             TEAM_MEMBERS = (Array.isArray(users) ? users : [])
                 .map(function (user) {
                     return user.displayName;
@@ -132,17 +132,6 @@
             day: "numeric",
             year: "numeric"
         });
-    }
-
-    function nextId(prefix, list) {
-        var max = list.reduce(function (value, id) {
-            var number = Number(String(id)
-                .split("-")
-                .pop());
-            return isFinite(number) ? Math.max(value, number) : value;
-        }, 0);
-        return prefix + "-" + String(max + 1)
-            .padStart(3, "0");
     }
 
     function selected() {
@@ -475,9 +464,7 @@
         var record = id ? data.projects.find(function (item) {
             return item.id === id;
         }) : {
-            id: nextId("PRJ", data.projects.map(function (item) {
-                return item.id;
-            })),
+            id: "",
             name: "",
             owner: "",
             status: "Waiting",
@@ -500,9 +487,7 @@
         var record = id ? data.workItems.find(function (item) {
             return item.id === id;
         }) : {
-            id: nextId("WI", data.workItems.map(function (item) {
-                return item.id;
-            })),
+            id: "",
             projectId: project.id,
             title: "",
             owner: "",
@@ -525,9 +510,7 @@
         var record = id ? data.activities.find(function (item) {
             return item.id === id;
         }) : {
-            id: nextId("ACT", data.activities.map(function (item) {
-                return item.id;
-            })),
+            id: "",
             projectId: project.id,
             workItemId: workItemId,
             title: "",
@@ -546,9 +529,7 @@
         var record = id ? data.raidItems.find(function (item) {
             return item.id === id;
         }) : {
-            id: nextId("RAID", data.raidItems.map(function (item) {
-                return item.id;
-            })),
+            id: "",
             projectId: project.id,
             type: "Risk",
             description: "",
@@ -648,9 +629,15 @@
             event.preventDefault();
             var record = formObject(event.currentTarget);
             try {
-                await apiSend("PUT", "/projects/" + encodeURIComponent(record.id), record);
+                var saved;
+                if (record.id) {
+                    await apiSend("PUT", "/projects/" + encodeURIComponent(record.id), record);
+                    saved = record;
+                } else {
+                    saved = await apiSend("POST", "/projects", record);
+                }
                 await refresh();
-                selectedId = record.id;
+                selectedId = saved.id;
                 document.getElementById("project-dialog")
                     .close();
                 render();
@@ -665,9 +652,15 @@
             event.preventDefault();
             var record = formObject(event.currentTarget);
             try {
-                await apiSend("PUT", "/workitems/" + encodeURIComponent(record.id), record);
+                var saved;
+                if (record.id) {
+                    await apiSend("PUT", "/workitems/" + encodeURIComponent(record.id), record);
+                    saved = record;
+                } else {
+                    saved = await apiSend("POST", "/workitems", record);
+                }
                 await refresh();
-                expandedWorkIds[record.id] = true;
+                expandedWorkIds[saved.id] = true;
                 document.getElementById("work-dialog")
                     .close();
                 render();
@@ -682,9 +675,15 @@
             event.preventDefault();
             var record = formObject(event.currentTarget);
             try {
-                await apiSend("PUT", "/activities/" + encodeURIComponent(record.id), record);
+                var saved;
+                if (record.id) {
+                    await apiSend("PUT", "/activities/" + encodeURIComponent(record.id), record);
+                    saved = record;
+                } else {
+                    saved = await apiSend("POST", "/activities", record);
+                }
                 await refresh();
-                expandedWorkIds[record.workItemId] = true;
+                expandedWorkIds[saved.workItemId] = true;
                 document.getElementById("activity-dialog")
                     .close();
                 render();
@@ -699,7 +698,11 @@
             event.preventDefault();
             var record = formObject(event.currentTarget);
             try {
-                await apiSend("PUT", "/raid/" + encodeURIComponent(record.id), record);
+                if (record.id) {
+                    await apiSend("PUT", "/raid/" + encodeURIComponent(record.id), record);
+                } else {
+                    await apiSend("POST", "/raid", record);
+                }
                 await refresh();
                 document.getElementById("raid-dialog")
                     .close();
