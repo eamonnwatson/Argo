@@ -4,13 +4,10 @@ namespace Argo.Extensions;
 
 public static class IdGenerator
 {
-    // Crockford Base32 alphabet (uppercase only). Excludes I, L, O, U to avoid
-    // visual ambiguity with 1, 1, 0, and V respectively.
     private const string Base32Alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
     public static string New(string prefix) => $"{prefix}-{NewSuffix()}";
 
-    // 5 random bytes = 40 bits = exactly eight 5-bit Base32 characters, no padding needed.
     private static string NewSuffix()
     {
         Span<byte> bytes = stackalloc byte[5];

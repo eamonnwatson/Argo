@@ -1,6 +1,3 @@
-// Argo Portfolio page script
-// Depends on common.js (window.Argo) being loaded first.
-
 (function () {
     "use strict";
 

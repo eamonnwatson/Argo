@@ -1,5 +1,3 @@
-// Argo shared helpers
-// Loaded before portfolio.js / intake.js on their respective pages.
 (function (global) {
   "use strict";
 

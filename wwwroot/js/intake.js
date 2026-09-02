@@ -1,6 +1,3 @@
-// Argo Intake page script
-// Depends on common.js (window.Argo) being loaded first.
-
 (function () {
     "use strict";
     var STORAGE_KEY = "argo-project-intake-v1";

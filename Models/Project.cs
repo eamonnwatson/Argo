@@ -14,9 +14,6 @@ public class Project
     public required string SourceRequestId { get; init; }
     public required DateTime SubmittedAt { get; set; }
 
-    // Raw JSON text of the original intake request payload, if this
-    // project originated from a submitted request. Kept as an opaque
-    // blob because the intake form's field set can change over time.
     public string? IntakeDetails { get; set; }
 
     public ICollection<WorkItem> WorkItems { get; set; } = [];

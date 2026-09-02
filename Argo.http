@@ -3,5 +3,3 @@
 GET {{Argo_HostAddress}}/api/v1/portfolio
 Accept: application/json
 
-###
-
