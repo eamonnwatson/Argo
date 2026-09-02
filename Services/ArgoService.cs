@@ -32,6 +32,18 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
         return projects;
     }
 
+    public async Task<Result<IReadOnlyCollection<User>>> GetUsersAsync()
+    {
+        if (!CheckAuthorized().Result)
+            return Result.Fail(APIErrors.UnauthroizedError);
+
+        var users = await dbContext.Users.AsNoTracking()
+            .OrderBy(u => u.DisplayName)
+            .ToListAsync();
+
+        return users;
+    }
+
     public async Task<Result> SaveProject(string id, ProjectDTO dto)
     {
         if (!CheckAuthorized().Result)

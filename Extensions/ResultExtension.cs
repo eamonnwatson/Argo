@@ -10,12 +10,26 @@ public static class ResultExtension
             return Results.Ok(result.ValueOrDefault);
 
         if (result.Errors.Where(e => e.HasMetadataKey("Unauthorized")).Any())
-            return Results.Unauthorized();
+            return Results.Json(new[] { "Access Denied" }, statusCode: StatusCodes.Status401Unauthorized);
 
         if (result.Errors.Where(e => e.HasMetadataKey("NotFound")).Any())
-            return Results.NotFound();
+            return Results.NotFound(result.Errors[0].Message);
 
-        return Results.BadRequest(result.Errors.Select(e => e.Message));
+        return Results.BadRequest(result.Errors[0].Message);
+    }
+
+    public static IResult ToResults(this Result result)
+    {
+        if (result.IsSuccess)
+            return Results.NoContent();
+
+        if (result.Errors.Where(e => e.HasMetadataKey("Unauthorized")).Any())
+            return Results.Json(new[] { "Access Denied" }, statusCode: StatusCodes.Status401Unauthorized);
+
+        if (result.Errors.Where(e => e.HasMetadataKey("NotFound")).Any())
+            return Results.NotFound(result.Errors[0].Message);
+
+        return Results.BadRequest(result.Errors[0].Message);
     }
 
 }

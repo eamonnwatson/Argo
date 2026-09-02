@@ -8,6 +8,7 @@ public interface IArgoService
 {
     Task<Result<InjestResult>> InjectAsync();
     Task<Result<IReadOnlyCollection<Project>>> GetProjectsAsync();
+    Task<Result<IReadOnlyCollection<User>>> GetUsersAsync();
     Task<Result> SaveProject(string id, ProjectDTO dto);
     Task<Result> DeleteProject(string id);
     Task<Result> SaveWorkItem(string id, WorkItemDTO dto);

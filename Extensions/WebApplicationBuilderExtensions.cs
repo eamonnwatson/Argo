@@ -12,6 +12,7 @@ public static class WebApplicationBuilderExtensions
         builder.Services.AddWindowsService(options => options.ServiceName = "Argo WebService");
 
         builder.Services.AddOpenApi();
+        builder.Services.AddProblemDetails();
         builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme).AddNegotiate();
 
         builder.Services.AddAuthorization(options => options.FallbackPolicy = options.DefaultPolicy);

@@ -79,34 +79,42 @@ public static class ApiEndpoints
             return result.ToResults();
         });
 
+        api.MapGet("/users", async (IArgoService argoService) =>
+        {
+            var result = (await argoService.GetUsersAsync())
+                            .Map(users => users.Select(u => new UserDTO(u.DomainID, u.DisplayName)).ToList());
+
+            return result.ToResults();
+        });
+
         api.MapPut("/projects/{id}", async (string id, ProjectDTO dto, IArgoService argoService) =>
         {
-            await argoService.SaveProject(id, dto);
-            return Results.NoContent();
+            var result = await argoService.SaveProject(id, dto);
+            return result.ToResults();
         });
 
         api.MapDelete("/projects/{id}", async (string id, IArgoService argoService) =>
         {
-            await argoService.DeleteProject(id);
-            return Results.NoContent();
+            var result = await argoService.DeleteProject(id);
+            return result.ToResults();
         });
 
         api.MapPut("/workitems/{id}", async (string id, WorkItemDTO dto, IArgoService argoService) =>
         {
-            await argoService.SaveWorkItem(id, dto);
-            return Results.NoContent();
+            var result = await argoService.SaveWorkItem(id, dto);
+            return result.ToResults();
         });
 
         api.MapPut("/activities/{id}", async (string id, ActivityDTO dto, IArgoService argoService) =>
         {
-            await argoService.SaveActivity(id, dto);
-            return Results.NoContent();
+            var result = await argoService.SaveActivity(id, dto);
+            return result.ToResults();
         });
 
         api.MapPut("/raid/{id}", async (string id, RaidItemDTO dto, IArgoService argoService) =>
         {
-            await argoService.SaveRaidItem(id, dto);
-            return Results.NoContent();
+            var result = await argoService.SaveRaidItem(id, dto);
+            return result.ToResults();
         });
 
         api.MapPost("/intake-submissions", async (IntakeSubmissionDTO dto, IArgoService argoService) =>
