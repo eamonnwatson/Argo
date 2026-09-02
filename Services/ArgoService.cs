@@ -14,10 +14,9 @@ namespace Argo.Services;
 /// </summary>
 /// <param name="dbContext">The EF Core context used for all persistence operations.</param>
 /// <param name="httpContextAccessor">Provides access to the current request user for authorization checks.</param>
-public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpContextAccessor) : IArgoService
+public class ArgoService(ArgoDbContext dbContext) : IArgoService
 {
     private readonly ArgoDbContext dbContext = dbContext;
-    private readonly HttpContext? httpContext = httpContextAccessor.HttpContext;
 
     /// <summary>
     /// Executes the current ingestion workflow.
@@ -39,9 +38,6 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
     /// <returns>A result containing the project hierarchy when authorization succeeds.</returns>
     public async Task<Result<IReadOnlyCollection<Project>>> GetProjectsAsync()
     {
-        if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthorizedError);
-
         var projects = await dbContext.Projects.AsNoTracking()
             .Include(p => p.WorkItems)
                 .ThenInclude(a => a.Activities)
@@ -60,9 +56,6 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
     /// <returns>A result containing user records sorted by display name.</returns>
     public async Task<Result<IReadOnlyCollection<User>>> GetUsersAsync(bool projectManagersOnly = false)
     {
-        if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthorizedError);
-
         var query = dbContext.Users.AsNoTracking();
 
         if (projectManagersOnly)
@@ -82,9 +75,6 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
     /// <returns>A result containing the created project DTO.</returns>
     public async Task<Result<ProjectDTO>> CreateProject(ProjectCreateDTO dto)
     {
-        if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthorizedError);
-
         var id = await GenerateUniqueIdAsync("PRJ", async candidate => await dbContext.Projects.AnyAsync(p => p.Id == candidate));
         var submittedAt = DateTime.Now;
 
@@ -116,9 +106,6 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
     /// <returns>A result indicating success or the reason for failure.</returns>
     public async Task<Result> UpdateProject(string id, ProjectDTO dto)
     {
-        if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthorizedError);
-
         var existing = await dbContext.Projects.FindAsync(id);
         if (existing is null)
             return Result.Fail(APIErrors.NotFoundError($"Project {id} was not found"));
@@ -143,9 +130,6 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
     /// <returns>A result indicating whether the delete operation completed.</returns>
     public async Task<Result> DeleteProject(string id)
     {
-        if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthorizedError);
-
         await dbContext.Projects.Where(p => p.Id == id).ExecuteDeleteAsync();
         return Result.Ok();
     }
@@ -157,9 +141,6 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
     /// <returns>A result containing the created work item DTO.</returns>
     public async Task<Result<WorkItemDTO>> CreateWorkItem(WorkItemCreateDTO dto)
     {
-        if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthorizedError);
-
         var id = await GenerateUniqueIdAsync("WI", async candidate => await dbContext.WorkItems.AnyAsync(w => w.Id == candidate));
 
         await dbContext.WorkItems.AddAsync(new WorkItem
@@ -191,9 +172,6 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
     /// <returns>A result indicating success or the reason for failure.</returns>
     public async Task<Result> UpdateWorkItem(string id, WorkItemDTO dto)
     {
-        if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthorizedError);
-
         var existing = await dbContext.WorkItems.FindAsync(id);
         if (existing is null)
             return Result.Fail(APIErrors.NotFoundError($"Work item {id} was not found"));
@@ -221,9 +199,6 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
     /// <returns>A result containing the created activity DTO.</returns>
     public async Task<Result<ActivityDTO>> CreateActivity(ActivityCreateDTO dto)
     {
-        if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthorizedError);
-
         var id = await GenerateUniqueIdAsync("ACT", async candidate => await dbContext.Activities.AnyAsync(a => a.Id == candidate));
 
         await dbContext.Activities.AddAsync(new Activity
@@ -251,9 +226,6 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
     /// <returns>A result indicating success or the reason for failure.</returns>
     public async Task<Result> UpdateActivity(string id, ActivityDTO dto)
     {
-        if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthorizedError);
-
         var existing = await dbContext.Activities.FindAsync(id);
         if (existing is null)
             return Result.Fail(APIErrors.NotFoundError($"Activity {id} was not found"));
@@ -277,9 +249,6 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
     /// <returns>A result containing the created RAID item DTO.</returns>
     public async Task<Result<RaidItemDTO>> CreateRaidItem(RaidItemCreateDTO dto)
     {
-        if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthorizedError);
-
         var id = await GenerateUniqueIdAsync("RAID", async candidate => await dbContext.RaidItems.AnyAsync(r => r.Id == candidate));
 
         await dbContext.RaidItems.AddAsync(new RaidItem
@@ -305,9 +274,6 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
     /// <returns>A result indicating success or the reason for failure.</returns>
     public async Task<Result> UpdateRaidItem(string id, RaidItemDTO dto)
     {
-        if (!CheckAuthorized().Result)
-            return Result.Fail(APIErrors.UnauthorizedError);
-
         var existing = await dbContext.RaidItems.FindAsync(id);
         if (existing is null)
             return Result.Fail(APIErrors.NotFoundError($"RAID item {id} was not found"));
@@ -383,31 +349,7 @@ public class ArgoService(ArgoDbContext dbContext, IHttpContextAccessor httpConte
         throw new InvalidOperationException($"Could not generate a unique id with prefix '{prefix}' after {maxAttempts} attempts.");
     }
 
-    /// <summary>
-    /// Validates that the current authenticated Windows user exists in the Argo user table.
-    /// </summary>
-    /// <returns>
-    /// <see langword="true"/> when a matching user record exists; otherwise, <see langword="false"/>.
-    /// </returns>
-    /// <remarks>
-    /// Domain-qualified identity names are normalized to the account name segment
-    /// before comparison with stored <c>DomainID</c> values.
-    /// </remarks>
-    private async Task<bool> CheckAuthorized()
-    {
-        var user = httpContext?.User?.Identity?.Name;
-        if (user is null)
-            return false;
-
-        var separatorIndex = user.LastIndexOf('\\');
-        if (separatorIndex >= 0)
-            user = user[(separatorIndex + 1)..];
-
-        var dbUser = await dbContext.Users.Where(u => u.DomainID.ToUpper() == user.ToUpper()).FirstOrDefaultAsync();
-
-        return dbUser is not null;
     }
-}
 
 /// <summary>
 /// Represents a summary of an ingestion operation.

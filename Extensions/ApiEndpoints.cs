@@ -20,7 +20,7 @@ public static class ApiEndpoints
     /// </remarks>
     public static WebApplication MapArgoApi(this WebApplication app)
     {
-        var api = app.MapGroup("/api/v1");
+        var api = app.MapGroup("/api/v1").RequireAuthorization("ArgoUser");
 
         api.MapGet("/portfolio", async (IArgoService argoService) =>
             await argoService
@@ -31,7 +31,8 @@ public static class ApiEndpoints
         api.MapPost("/portfolio/ingest", async (IArgoService argoService) =>
             await argoService.InjectAsync()
                 .MapAsync(result => new IngestDTO(result.Count, result.FirstProjectId))
-                .ToResultsAsync());
+                .ToResultsAsync())
+            .AllowAnonymous();
 
         api.MapGet("/users", async (bool? projectManagersOnly, IArgoService argoService) =>
             await argoService.GetUsersAsync(projectManagersOnly ?? false)
@@ -66,7 +67,8 @@ public static class ApiEndpoints
             await argoService.UpdateRaidItem(id, dto).ToResultsAsync());
 
         api.MapPost("/intake-submissions", async (IntakeSubmissionDTO dto, IArgoService argoService) =>
-            await argoService.SaveIntakeSubmission(dto).ToResultsAsync());
+            await argoService.SaveIntakeSubmission(dto).ToResultsAsync())
+            .AllowAnonymous();
 
         return app;
     }
