@@ -19,6 +19,18 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
     private readonly ArgoDbContext dbContext = dbContext;
 
     /// <summary>
+    /// Gets the set of Health values accepted by the portfolio UI and API.
+    /// </summary>
+    private static readonly HashSet<string> ValidHealthValues = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Not Assessed",
+        "On Track",
+        "At Risk",
+        "Blocked",
+        "Complete"
+    };
+
+    /// <summary>
     /// Executes the current ingestion workflow.
     /// </summary>
     /// <returns>
@@ -75,6 +87,9 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
     /// <returns>A result containing the created project DTO.</returns>
     public async Task<Result<ProjectDTO>> CreateProject(ProjectCreateDTO dto)
     {
+        if (!ValidHealthValues.Contains(dto.Health))
+            return Result.Fail(APIErrors.ValidationError($"'{dto.Health}' is not a valid Health value."));
+
         var id = await GenerateUniqueIdAsync("PRJ", async candidate => await dbContext.Projects.AnyAsync(p => p.Id == candidate));
         var submittedAt = DateTime.Now;
 
@@ -106,6 +121,9 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
     /// <returns>A result indicating success or the reason for failure.</returns>
     public async Task<Result> UpdateProject(string id, ProjectDTO dto)
     {
+        if (!ValidHealthValues.Contains(dto.Health))
+            return Result.Fail(APIErrors.ValidationError($"'{dto.Health}' is not a valid Health value."));
+
         var existing = await dbContext.Projects.FindAsync(id);
         if (existing is null)
             return Result.Fail(APIErrors.NotFoundError($"Project {id} was not found"));
@@ -311,7 +329,7 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
             Name = title,
             Owner = "Unassigned",
             Status = "Waiting",
-            Health = "Not Assigned",
+            Health = "Not Assessed",
             Priority = "Needs Triage",
             Objective = request.DesiredOutcome ?? request.BusinessProblem ?? request.RequestDescription ?? "Review the submitted business request",
             NextMilestone = "Review and triage request",

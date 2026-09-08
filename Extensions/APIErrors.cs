@@ -19,4 +19,11 @@ public static class APIErrors
     /// <param name="message">The not-found error message to expose to the API caller.</param>
     /// <returns>An <see cref="IError"/> tagged with not-found metadata.</returns>
     public static IError NotFoundError(string message) => new Error(message).WithMetadata("NotFound", true);
+
+    /// <summary>
+    /// Creates an error instance indicating the caller supplied an invalid value.
+    /// </summary>
+    /// <param name="message">The validation error message to expose to the API caller.</param>
+    /// <returns>An <see cref="IError"/> tagged with validation metadata.</returns>
+    public static IError ValidationError(string message) => new Error(message).WithMetadata("Validation", true);
 }

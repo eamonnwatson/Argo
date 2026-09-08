@@ -53,6 +53,26 @@
         return res.status === 204 ? null : res.json();
     }
 
+    var VALID_HEALTH_VALUES = ["Not Assessed", "On Track", "At Risk", "Blocked", "Complete"];
+
+    // Defensive client-side guard: blocks saving the project form if Health is
+    // missing or holds a value outside the supported set (e.g. legacy/bad data
+    // such as "Not Assigned" that isn't one of the dropdown's options).
+    document.addEventListener("submit", function (event) {
+        var form = event.target;
+        if (!form || form.id !== "project-form") return;
+        var healthField = form.elements.health;
+        if (!healthField) return;
+        if (VALID_HEALTH_VALUES.indexOf(healthField.value) === -1) {
+            healthField.setCustomValidity("Please select a valid health value.");
+            healthField.reportValidity();
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return;
+        }
+        healthField.setCustomValidity("");
+    }, true);
+
     function normalize(value) {
         var safe = value && typeof value === "object" ? value : {};
         safe.projects = (Array.isArray(safe.projects) ? safe.projects : [])
