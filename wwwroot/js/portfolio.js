@@ -73,6 +73,68 @@
         healthField.setCustomValidity("");
     }, true);
 
+    function intakeField(source, camelName, pascalName) {
+        if (!source || typeof source !== "object") return "";
+        return source[camelName] ?? source[pascalName] ?? "";
+    }
+
+    function normalizeIntakeDetails(details) {
+        if (!details || typeof details !== "object") return null;
+        var request = details.request || details.Request || details;
+        if (!request || typeof request !== "object") return null;
+        return {
+            requestId: intakeField(request, "requestId", "RequestId"),
+            requestType: intakeField(request, "requestType", "RequestType"),
+            requesterName: intakeField(request, "requesterName", "RequesterName"),
+            department: intakeField(request, "department", "Department"),
+            requesterContact: intakeField(request, "requesterContact", "RequesterContact"),
+            businessSponsor: intakeField(request, "businessSponsor", "BusinessSponsor"),
+            businessOwner: intakeField(request, "businessOwner", "BusinessOwner"),
+            additionalStakeholders: intakeField(request, "additionalStakeholders", "AdditionalStakeholders"),
+            requestDescription: intakeField(request, "requestDescription", "RequestDescription"),
+            businessProblem: intakeField(request, "businessProblem", "BusinessProblem"),
+            desiredOutcome: intakeField(request, "desiredOutcome", "DesiredOutcome"),
+            successMeasures: intakeField(request, "successMeasures", "SuccessMeasures"),
+            affectedGroups: intakeField(request, "affectedGroups", "AffectedGroups"),
+            currentProcess: intakeField(request, "currentProcess", "CurrentProcess"),
+            businessImpact: intakeField(request, "businessImpact", "BusinessImpact"),
+            impactScope: intakeField(request, "impactScope", "ImpactScope"),
+            usersAffected: intakeField(request, "usersAffected", "UsersAffected"),
+            clientImpact: intakeField(request, "clientImpact", "ClientImpact"),
+            clientNames: intakeField(request, "clientNames", "ClientNames"),
+            expectedBenefits: request.expectedBenefits || request.ExpectedBenefits || [],
+            noActionImpact: intakeField(request, "noActionImpact", "NoActionImpact"),
+            desiredDate: intakeField(request, "desiredDate", "DesiredDate"),
+            dateType: intakeField(request, "dateType", "DateType"),
+            dateReason: intakeField(request, "dateReason", "DateReason"),
+            inScope: intakeField(request, "inScope", "InScope"),
+            outOfScope: intakeField(request, "outOfScope", "OutOfScope"),
+            dependencies: intakeField(request, "dependencies", "Dependencies"),
+            strategicAlignment: intakeField(request, "strategicAlignment", "StrategicAlignment"),
+            systemsInvolved: intakeField(request, "systemsInvolved", "SystemsInvolved"),
+            dataSources: intakeField(request, "dataSources", "DataSources"),
+            sensitiveData: intakeField(request, "sensitiveData", "SensitiveData"),
+            sensitiveDetails: intakeField(request, "sensitiveDetails", "SensitiveDetails"),
+            accessNeeded: intakeField(request, "accessNeeded", "AccessNeeded"),
+            technicalOwners: intakeField(request, "technicalOwners", "TechnicalOwners"),
+            vendors: intakeField(request, "vendors", "Vendors"),
+            supportingMaterials: intakeField(request, "supportingMaterials", "SupportingMaterials"),
+            reportNames: intakeField(request, "reportNames", "ReportNames"),
+            reportFrequency: intakeField(request, "reportFrequency", "ReportFrequency"),
+            deliveryTime: intakeField(request, "deliveryTime", "DeliveryTime"),
+            reportRecipients: intakeField(request, "reportRecipients", "ReportRecipients"),
+            outputFormat: intakeField(request, "outputFormat", "OutputFormat"),
+            samplesAvailable: intakeField(request, "samplesAvailable", "SamplesAvailable"),
+            sampleReferences: intakeField(request, "sampleReferences", "SampleReferences"),
+            manualSteps: intakeField(request, "manualSteps", "ManualSteps"),
+            sourceSystem: intakeField(request, "sourceSystem", "SourceSystem"),
+            targetSystem: intakeField(request, "targetSystem", "TargetSystem"),
+            dataOwner: intakeField(request, "dataOwner", "DataOwner"),
+            refreshFrequency: intakeField(request, "refreshFrequency", "RefreshFrequency"),
+            dataVolume: intakeField(request, "dataVolume", "DataVolume")
+        };
+    }
+
     function normalize(value) {
         var safe = value && typeof value === "object" ? value : {};
         safe.projects = (Array.isArray(safe.projects) ? safe.projects : [])
@@ -90,6 +152,7 @@
                         normalized.intakeDetails = null;
                     }
                 }
+                normalized.intakeDetails = normalizeIntakeDetails(normalized.intakeDetails);
                 return normalized;
             });
         safe.workItems = (Array.isArray(safe.workItems) ? safe.workItems : [])

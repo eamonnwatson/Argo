@@ -81,7 +81,7 @@ public static class ApiEndpoints
     private static PortfolioDTO MapProjects(IReadOnlyCollection<Project> projects)
     {
         var projectDto = projects
-            .Select(p => new ProjectDTO(p.Id, p.Name, p.Owner, p.Status, p.Health, p.Priority, p.Objective, p.NextMilestone, p.TargetDate, p.SourceRequestId, p.SubmittedAt))
+            .Select(p => new ProjectDTO(p.Id, p.Name, p.Owner, p.Status, p.Health, p.Priority, p.Objective, p.NextMilestone, p.TargetDate, p.SourceRequestId, p.SubmittedAt, p.IntakeDetails))
             .ToList();
 
         // The response exposes child entities as top-level collections so client code can

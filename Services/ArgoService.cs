@@ -110,7 +110,7 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
 
         await dbContext.SaveChangesAsync();
 
-        return new ProjectDTO(id, dto.Name, dto.Owner, dto.Status, dto.Health, dto.Priority, dto.Objective, dto.NextMilestone, dto.TargetDate, string.Empty, submittedAt);
+        return new ProjectDTO(id, dto.Name, dto.Owner, dto.Status, dto.Health, dto.Priority, dto.Objective, dto.NextMilestone, dto.TargetDate, string.Empty, submittedAt, null);
     }
 
     /// <summary>

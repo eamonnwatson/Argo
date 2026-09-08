@@ -14,7 +14,8 @@
 /// <param name="TargetDate">The target completion date.</param>
 /// <param name="SourceRequestId">The originating intake request identifier.</param>
 /// <param name="SubmittedAt">The intake submission timestamp.</param>
-public record ProjectDTO(string Id, string Name, string Owner, string Status, string Health, string Priority, string Objective, string NextMilestone, DateOnly TargetDate, string SourceRequestId, DateTime SubmittedAt);
+/// <param name="IntakeDetails">Optional serialized intake details used to render the intake panel.</param>
+public record ProjectDTO(string Id, string Name, string Owner, string Status, string Health, string Priority, string Objective, string NextMilestone, DateOnly TargetDate, string SourceRequestId, DateTime SubmittedAt, string? IntakeDetails = null);
 
 /// <summary>
 /// Represents the payload used to create a new project.
