@@ -1,3 +1,8 @@
 <Solution>
-  <Project Path="Argo.csproj" />
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+  </Folder>
+  <Project Path="src/Argo.Domain/Argo.Domain.csproj" />
+  <Project Path="src/Argo.Persistence/Argo.Persistence.csproj" />
+  <Project Path="src/Argo.Web/Argo.Web.csproj" />
 </Solution>

@@ -1,5 +1,5 @@
 ﻿using Argo.DTO;
-using Argo.Models;
+using Argo.Domain.Entities;
 using FluentResults;
 
 namespace Argo.Services;

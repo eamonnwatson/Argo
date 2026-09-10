@@ -1,4 +1,5 @@
 using Argo.Data;
+using Argo.Domain.ValueObjects;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.EntityFrameworkCore;
@@ -33,16 +34,27 @@ public sealed class ArgoUserAuthorizationHandler(ArgoDbContext dbContext) : Auth
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, ArgoUserRequirement requirement)
     {
         var user = context.User?.Identity?.Name;
-        if (user is null)
+        if (string.IsNullOrWhiteSpace(user))
             return;
 
         var separatorIndex = user.LastIndexOf('\\');
         if (separatorIndex >= 0)
             user = user[(separatorIndex + 1)..];
 
-        var dbUser = await dbContext.Users.Where(u => u.DomainID.ToUpper() == user.ToUpper()).FirstOrDefaultAsync();
+        if (string.IsNullOrWhiteSpace(user))
+            return;
 
-        if (dbUser is not null)
+        var userIdResult = UserId.Create(user);
+        if (userIdResult.IsFailed)
+            return;
+
+        var userId = userIdResult.Value;
+
+        var exists = await dbContext.Users
+            .AsNoTracking()
+            .AnyAsync(u => u.Id == userId);
+
+        if (exists)
             context.Succeed(requirement);
     }
 }
@@ -61,6 +73,7 @@ public sealed class ArgoUserAuthorizationHandler(ArgoDbContext dbContext) : Auth
 public sealed class ArgoAuthorizationResultHandler : IAuthorizationMiddlewareResultHandler
 {
     private readonly AuthorizationMiddlewareResultHandler defaultHandler = new();
+    private static readonly string[] value = new[] { "Access Denied" };
 
     /// <summary>
     /// Handles the outcome of authorization for the current request.
@@ -75,7 +88,7 @@ public sealed class ArgoAuthorizationResultHandler : IAuthorizationMiddlewareRes
         if (authorizeResult.Forbidden)
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            await context.Response.WriteAsJsonAsync(new[] { "Access Denied" });
+            await context.Response.WriteAsJsonAsync(value);
             return;
         }
 
