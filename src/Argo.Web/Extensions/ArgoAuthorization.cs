@@ -44,11 +44,7 @@ public sealed class ArgoUserAuthorizationHandler(ArgoDbContext dbContext) : Auth
         if (string.IsNullOrWhiteSpace(user))
             return;
 
-        var userIdResult = UserId.Create(user);
-        if (userIdResult.IsFailed)
-            return;
-
-        var userId = userIdResult.Value;
+        var userId = UserId.FromTrustedValue(user);
 
         var exists = await dbContext.Users
             .AsNoTracking()
