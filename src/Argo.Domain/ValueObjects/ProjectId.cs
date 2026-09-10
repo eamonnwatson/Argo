@@ -1,6 +1,6 @@
-using System.Text.Json.Serialization;
-using FluentResults;
 using Argo.Domain.Common;
+using FluentResults;
+using System.Text.Json.Serialization;
 
 namespace Argo.Domain.ValueObjects;
 
