@@ -7,11 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-	<PackageReference Include="FluentResults" />
+    <Compile Remove="Properties\**" />
+    <EmbeddedResource Remove="Properties\**" />
+    <None Remove="Properties\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Properties\" />
+	<PackageReference Include="FluentResults" />
   </ItemGroup>
 
 </Project>

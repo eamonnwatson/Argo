@@ -8,9 +8,13 @@
 
   <ItemGroup>
     <Compile Remove="Argo.Domain\**\*.cs" />
+    <Compile Remove="Models\**" />
     <Content Remove="Argo.Domain\**" />
+    <Content Remove="Models\**" />
     <None Remove="Argo.Domain\**" />
+    <None Remove="Models\**" />
     <EmbeddedResource Remove="Argo.Domain\**" />
+    <EmbeddedResource Remove="Models\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -20,10 +24,6 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Models\" />
   </ItemGroup>
 
   <ItemGroup>
