@@ -8,8 +8,8 @@ namespace Argo.Domain.Entities;
 
 public class Project : AggregateRoot<ProjectId>
 {
-    private readonly List<WorkItem> _workItems = [];
-    private readonly List<RaidItem> _raidItems = [];
+    private readonly List<WorkItem> workItems = [];
+    private readonly List<RaidItem> raidItems = [];
 
     private Project(ProjectId id)
     {
@@ -28,10 +28,9 @@ public class Project : AggregateRoot<ProjectId>
     public DateTime SubmittedAt { get; internal set; }
     public string? IntakeDetails { get; internal set; }
 
-
     public User? Owner { get; set; }
-    public IReadOnlyCollection<WorkItem> WorkItems => _workItems;
-    public IReadOnlyCollection<RaidItem> RaidItems => _raidItems;
+    public IReadOnlyCollection<WorkItem> WorkItems => workItems;
+    public IReadOnlyCollection<RaidItem> RaidItems => raidItems;
 
     public static Result<Project> Create(ProjectId id, string name, UserId? ownerId, ProjectStatus status, ProjectHealth health, ProjectPriority priority, string objective, string nextMilestone, DateOnly targetDate,
                                             string sourceRequestId, DateTime submittedAt, string? intakeDetails = null)
@@ -94,7 +93,7 @@ public class Project : AggregateRoot<ProjectId>
         return Result.Ok();
     }
 
-    internal void AddWorkItem(WorkItem workItem) => _workItems.Add(workItem);
+    internal void AddWorkItem(WorkItem workItem) => workItems.Add(workItem);
 
-    internal void AddRaidItem(RaidItem raidItem) => _raidItems.Add(raidItem);
+    internal void AddRaidItem(RaidItem raidItem) => raidItems.Add(raidItem);
 }

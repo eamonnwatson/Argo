@@ -7,13 +7,12 @@ namespace Argo.Domain.Entities;
 
 public class WorkItem : Entity<WorkItemId>
 {
-    private readonly List<Activity> _activities = [];
+    private readonly List<Activity> activities = [];
 
     private WorkItem(WorkItemId id)
     {
         Id = id;
     }
-
 
     public ProjectId ProjectId { get; internal set; }
     public string Title { get; internal set; } = string.Empty;
@@ -27,10 +26,9 @@ public class WorkItem : Entity<WorkItemId>
     public string Milestone { get; internal set; } = string.Empty;
     public string DefinitionOfDone { get; internal set; } = string.Empty;
 
-    public IReadOnlyCollection<Activity> Activities => _activities;
+    public IReadOnlyCollection<Activity> Activities => activities;
 
-
-    public static Result<WorkItem> Create(WorkItemId id, ProjectId projectId, string title, string owner, WorkItemStatus status, DateOnly dueDate, string dependency, string purpose, string participants, string requiredInputs, 
+    public static Result<WorkItem> Create(WorkItemId id, ProjectId projectId, string title, string owner, WorkItemStatus status, DateOnly dueDate, string dependency, string purpose, string participants, string requiredInputs,
                                             string milestone, string definitionOfDone)
     {
         if (string.IsNullOrWhiteSpace(title))
@@ -81,5 +79,5 @@ public class WorkItem : Entity<WorkItemId>
         return Result.Ok();
     }
 
-    internal void AddActivity(Activity activity) => _activities.Add(activity);
+    internal void AddActivity(Activity activity) => activities.Add(activity);
 }

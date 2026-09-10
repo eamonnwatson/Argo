@@ -16,4 +16,8 @@
 	<PackageReference Include="FluentResults" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Common\Errors\" />
+  </ItemGroup>
+
 </Project>
