@@ -196,10 +196,11 @@
         populateOwnerDatalist();
     }
     function populateOwnerDatalist() {
-        var datalist = document.getElementById("team-members");
-        if (!datalist) return;
-        datalist.innerHTML = '<option value="Unassigned">' + TEAM_MEMBERS.map(function (member) {
-            return '<option value="' + Argo.escapeHtml(member) + '">';
+        var ownerSelect = document.getElementById("project-owner");
+        if (!ownerSelect) return;
+        ownerSelect.innerHTML = '<option value="Unassigned">Unassigned</option>' + TEAM_MEMBERS.map(function (member) {
+            var safe = Argo.escapeHtml(member);
+            return '<option value="' + safe + '">' + safe + '</option>';
         })
             .join("");
     }
@@ -475,7 +476,7 @@
             ["Refresh frequency", d.refreshFrequency],
             ["Volume / history", d.dataVolume]
         ], "full");
-        return '<details class="intake-panel" open><summary><span>Submitted request · ' + Argo.escapeHtml(project.sourceRequestId || d.requestId || "Request") + '</span><span>Original intake details</span></summary><div class="intake-content">' + html + '</div></details>';
+        return '<details class="intake-panel"><summary><span>Submitted request · ' + Argo.escapeHtml(project.sourceRequestId || d.requestId || "Request") + '</span><span>Original intake details</span></summary><div class="intake-content">' + html + '</div></details>';
     }
 
     function renderDetail() {
