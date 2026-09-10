@@ -195,14 +195,24 @@
         }
         populateOwnerDatalist();
     }
-    function populateOwnerDatalist() {
-        var ownerSelect = document.getElementById("project-owner");
+    var OWNER_SELECT_IDS = ["project-owner", "work-owner", "activity-owner", "raid-owner"];
+
+    function populateOwnerSelect(selectId) {
+        var ownerSelect = document.getElementById(selectId);
         if (!ownerSelect) return;
+        var previousValue = ownerSelect.value;
         ownerSelect.innerHTML = '<option value="Unassigned">Unassigned</option>' + TEAM_MEMBERS.map(function (member) {
             var safe = Argo.escapeHtml(member);
             return '<option value="' + safe + '">' + safe + '</option>';
         })
             .join("");
+        if (previousValue && TEAM_MEMBERS.indexOf(previousValue) !== -1) {
+            ownerSelect.value = previousValue;
+        }
+    }
+
+    function populateOwnerDatalist() {
+        OWNER_SELECT_IDS.forEach(populateOwnerSelect);
     }
 
     function dateLabel(value) {
@@ -522,8 +532,25 @@
         form.reset();
         Array.from(form.elements)
             .forEach(function (el) {
-                if (el.name && record[el.name] !== undefined) el.value = record[el.name];
+                if (!el.name || record[el.name] === undefined) return;
+                var value = record[el.name];
+                if (el.tagName === "SELECT" && el.name === "owner" && value) {
+                    ensureOwnerOption(el, value);
+                }
+                el.value = value;
             });
+    }
+
+    function ensureOwnerOption(selectEl, value) {
+        var hasOption = Array.from(selectEl.options)
+            .some(function (option) {
+                return option.value === value;
+            });
+        if (hasOption) return;
+        var option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        selectEl.appendChild(option);
     }
 
     function formObject(form) {
@@ -547,7 +574,7 @@
         }) : {
             id: "",
             name: "",
-            owner: "",
+            owner: "Unassigned",
             status: "Waiting",
             health: "On Track",
             priority: "Medium",
@@ -571,7 +598,7 @@
             id: "",
             projectId: project.id,
             title: "",
-            owner: "",
+            owner: "Unassigned",
             status: "Not Started",
             dueDate: "",
             dependency: "",
@@ -595,7 +622,7 @@
             projectId: project.id,
             workItemId: workItemId,
             title: "",
-            owner: "",
+            owner: "Unassigned",
             status: "Not Started",
             dueDate: "",
             notes: ""
@@ -614,7 +641,7 @@
             projectId: project.id,
             type: "Risk",
             description: "",
-            owner: "",
+            owner: "Unassigned",
             dueDate: ""
         };
         fillForm(document.getElementById("raid-form"), record);

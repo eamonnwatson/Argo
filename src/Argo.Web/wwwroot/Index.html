@@ -23,7 +23,6 @@
             <div class="actions">
                 <input id="import-file" class="screen-only-file" type="file" accept="application/json,.json">
                 <button id="import-btn" class="btn dark" type="button" style="display:none">↑ Import</button>
-                <button id="export-btn" class="btn dark" type="button">↓ Export backup</button>
                 <button id="add-project-btn" class="btn primary" type="button">＋ Add project</button>
             </div>
         </div>
@@ -118,7 +117,9 @@
                 </div>
                 <div class="field">
                     <label for="work-owner">Owner</label>
-                    <input id="work-owner" name="owner" required>
+                    <select id="work-owner" name="owner" required>
+                        <option value="Unassigned">Unassigned</option>
+                    </select>
                 </div>
                 <div class="field">
                     <label for="work-status">Status</label>
@@ -182,7 +183,9 @@
                 </div>
                 <div class="field">
                     <label for="activity-owner">Owner</label>
-                    <input id="activity-owner" name="owner" required>
+                    <select id="activity-owner" name="owner" required>
+                        <option value="Unassigned">Unassigned</option>
+                    </select>
                 </div>
                 <div class="field">
                     <label for="activity-status">Status</label>
@@ -231,7 +234,9 @@
                 </div>
                 <div class="field">
                     <label for="raid-owner">Owner</label>
-                    <input id="raid-owner" name="owner" required>
+                    <select id="raid-owner" name="owner" required>
+                        <option value="Unassigned">Unassigned</option>
+                    </select>
                 </div>
                 <div class="field full">
                     <label for="raid-description">Description</label>
