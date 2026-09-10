@@ -1,3 +1,4 @@
+using Argo.Application.Repositories;
 using Argo.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,6 +35,7 @@ public static class PersistenceServiceExtensions
         services.AddScoped<IActivityRepository, ActivityRepository>();
         services.AddScoped<IRaidItemRepository, RaidItemRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IOutboxMessageRepository, OutboxMessageRepository>();
 
         return services;
     }

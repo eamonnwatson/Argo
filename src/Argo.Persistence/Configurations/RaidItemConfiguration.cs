@@ -9,7 +9,7 @@ namespace Argo.Data.Configurations;
 /// <summary>
 /// Configures EF Core mapping for the <see cref="RaidItem"/> entity.
 /// </summary>
-public class RaidItemConfiguration : IEntityTypeConfiguration<RaidItem>
+internal class RaidItemConfiguration : IEntityTypeConfiguration<RaidItem>
 {
     public void Configure(EntityTypeBuilder<RaidItem> builder)
     {

@@ -7,9 +7,9 @@ namespace Argo.Data;
 /// Enables EF Core design-time tooling (migrations) to construct an <see cref="ArgoDbContext"/>
 /// without requiring the full application host to start.
 /// </summary>
-public class ArgoDbContextFactory : IDesignTimeDbContextFactory<ArgoDbContext>
+internal class ArgoDbContextFactory : IDesignTimeDbContextFactory<ArgoDbContext>
 {
-    public ArgoDbContext CreateDbContext(string[] args)
+    ArgoDbContext IDesignTimeDbContextFactory<ArgoDbContext>.CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<ArgoDbContext>();
         optionsBuilder.UseSqlite("Data Source=argo.db");

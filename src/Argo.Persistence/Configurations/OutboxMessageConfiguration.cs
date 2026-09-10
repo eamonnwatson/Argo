@@ -7,7 +7,7 @@ namespace Argo.Data.Configurations;
 /// <summary>
 /// Configures EF Core mapping for the <see cref="OutboxMessage"/> entity.
 /// </summary>
-public class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessage>
+internal class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessage>
 {
     public void Configure(EntityTypeBuilder<OutboxMessage> builder)
     {

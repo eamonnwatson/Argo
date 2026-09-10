@@ -1,8 +1,7 @@
-using Argo.Data;
+using Argo.Application.Repositories;
 using Argo.Domain.ValueObjects;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
-using Microsoft.EntityFrameworkCore;
 
 namespace Argo.Extensions;
 
@@ -17,13 +16,13 @@ public sealed class ArgoUserRequirement : IAuthorizationRequirement
 /// <summary>
 /// Validates that the current authenticated Windows user exists in the Argo user table.
 /// </summary>
-/// <param name="dbContext">The EF Core context used to look up known Argo users.</param>
+/// <param name="userRepository">The repository used to look up known Argo users.</param>
 /// <remarks>
 /// Domain-qualified identity names (e.g. <c>DOMAIN\username</c>) are normalized to the
 /// account name segment before comparison with stored <c>DomainID</c> values, matching
 /// the lookup previously performed inline within <c>ArgoService.CheckAuthorized</c>.
 /// </remarks>
-public sealed class ArgoUserAuthorizationHandler(ArgoDbContext dbContext) : AuthorizationHandler<ArgoUserRequirement>
+public sealed class ArgoUserAuthorizationHandler(IUserRepository userRepository) : AuthorizationHandler<ArgoUserRequirement>
 {
     /// <summary>
     /// Evaluates whether the current user satisfies the <see cref="ArgoUserRequirement"/>.
@@ -46,11 +45,8 @@ public sealed class ArgoUserAuthorizationHandler(ArgoDbContext dbContext) : Auth
 
         var userId = UserId.FromTrustedValue(user);
 
-        var exists = await dbContext.Users
-            .AsNoTracking()
-            .AnyAsync(u => u.Id == userId);
-
-        if (exists)
+        var existsResult = await userRepository.GetByIdAsync(userId);
+        if (existsResult.IsSuccess && existsResult.Value is not null)
             context.Succeed(requirement);
     }
 }

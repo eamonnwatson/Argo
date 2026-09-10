@@ -15,7 +15,7 @@ namespace Argo.Data;
 /// and defines cascade behavior for child records associated with parent entities.
 /// </remarks>
 /// <param name="options">The options used to configure the database context instance.</param>
-public class ArgoDbContext(DbContextOptions<ArgoDbContext> options) : DbContext(options)
+internal class ArgoDbContext(DbContextOptions<ArgoDbContext> options) : DbContext(options)
 {
     /// <summary>
     /// Gets the project activities tracked by the application.

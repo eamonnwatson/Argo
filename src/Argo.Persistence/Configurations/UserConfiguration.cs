@@ -8,7 +8,7 @@ namespace Argo.Data.Configurations;
 /// <summary>
 /// Configures EF Core mapping for the <see cref="User"/> entity.
 /// </summary>
-public class UserConfiguration : IEntityTypeConfiguration<User>
+internal class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
     {

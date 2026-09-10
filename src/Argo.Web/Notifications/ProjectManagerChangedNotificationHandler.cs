@@ -1,7 +1,6 @@
-using Argo.Data;
+using Argo.Application.Repositories;
 using Argo.Domain.Enums;
 using Argo.Domain.Events;
-using Microsoft.EntityFrameworkCore;
 
 namespace Argo.Notifications;
 
@@ -10,12 +9,14 @@ namespace Argo.Notifications;
 /// assigned project manager a concise summary of the project. Unassignment (no new
 /// owner) and missing recipient data are treated as handled with no email sent.
 /// </summary>
-/// <param name="dbContext">The database context used to load project and user summary data.</param>
+/// <param name="projectRepository">The repository used to load project summary data.</param>
+/// <param name="userRepository">The repository used to load user summary data.</param>
 /// <param name="emailSender">The email sender used to deliver the notification.</param>
 /// <param name="logger">The logger used to record skipped or unresolved notifications.</param>
-public class ProjectManagerChangedNotificationHandler(ArgoDbContext dbContext, IEmailSender emailSender, ILogger<ProjectManagerChangedNotificationHandler> logger)
+public class ProjectManagerChangedNotificationHandler(IProjectRepository projectRepository, IUserRepository userRepository, IEmailSender emailSender, ILogger<ProjectManagerChangedNotificationHandler> logger)
 {
-    private readonly ArgoDbContext dbContext = dbContext;
+    private readonly IProjectRepository projectRepository = projectRepository;
+    private readonly IUserRepository userRepository = userRepository;
     private readonly IEmailSender emailSender = emailSender;
     private readonly ILogger<ProjectManagerChangedNotificationHandler> logger = logger;
 
@@ -32,23 +33,23 @@ public class ProjectManagerChangedNotificationHandler(ArgoDbContext dbContext, I
             return;
         }
 
-        var project = await dbContext.Projects.AsNoTracking()
-            .FirstOrDefaultAsync(p => p.Id == domainEvent.ProjectId, cancellationToken);
-
-        if (project is null)
+        var projectResult = await projectRepository.GetByIdAsync(domainEvent.ProjectId, cancellationToken);
+        if (projectResult.IsFailed || projectResult.Value is null)
         {
             logger.LogWarning("Project {ProjectId} was not found; skipping manager-change notification.", domainEvent.ProjectId.Value);
             return;
         }
 
-        var user = await dbContext.Users.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == domainEvent.NewOwnerId, cancellationToken);
+        var project = projectResult.Value;
 
-        if (user is null)
+        var userResult = await userRepository.GetByIdAsync(domainEvent.NewOwnerId.Value, cancellationToken);
+        if (userResult.IsFailed || userResult.Value is null)
         {
             logger.LogWarning("User {UserId} was not found; skipping manager-change notification for project {ProjectId}.", domainEvent.NewOwnerId.Value.Value, domainEvent.ProjectId.Value);
             return;
         }
+
+        var user = userResult.Value;
 
         if (string.IsNullOrWhiteSpace(user.Email))
         {

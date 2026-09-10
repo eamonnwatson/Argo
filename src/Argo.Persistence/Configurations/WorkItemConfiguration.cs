@@ -9,7 +9,7 @@ namespace Argo.Data.Configurations;
 /// <summary>
 /// Configures EF Core mapping for the <see cref="WorkItem"/> entity.
 /// </summary>
-public class WorkItemConfiguration : IEntityTypeConfiguration<WorkItem>
+internal class WorkItemConfiguration : IEntityTypeConfiguration<WorkItem>
 {
     public void Configure(EntityTypeBuilder<WorkItem> builder)
     {

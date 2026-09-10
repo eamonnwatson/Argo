@@ -2,7 +2,7 @@ using Argo.Domain.Entities;
 using Argo.Domain.ValueObjects;
 using FluentResults;
 
-namespace Argo.Data.Repositories;
+namespace Argo.Application.Repositories;
 
 /// <summary>
 /// Provides data access for <see cref="RaidItem"/> entities.

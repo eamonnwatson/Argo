@@ -1,3 +1,4 @@
+using Argo.Application.Outbox;
 using Argo.Domain.Events;
 using Argo.Notifications;
 using System.Text.Json;
@@ -16,7 +17,7 @@ public class OutboxMessageDispatcher(ProjectManagerChangedNotificationHandler no
     private readonly ILogger<OutboxMessageDispatcher> logger = logger;
 
     /// <inheritdoc />
-    public async Task DispatchAsync(OutboxMessage message, CancellationToken cancellationToken)
+    public async Task DispatchAsync(PendingOutboxMessage message, CancellationToken cancellationToken)
     {
         var eventType = Type.GetType(message.Type);
 

@@ -1,3 +1,5 @@
+using Argo.Application.Outbox;
+
 namespace Argo.Outbox;
 
 /// <summary>
@@ -10,5 +12,5 @@ public interface IOutboxMessageDispatcher
     /// </summary>
     /// <param name="message">The outbox message to dispatch.</param>
     /// <param name="cancellationToken">A token to observe for cancellation requests.</param>
-    Task DispatchAsync(OutboxMessage message, CancellationToken cancellationToken);
+    Task DispatchAsync(PendingOutboxMessage message, CancellationToken cancellationToken);
 }

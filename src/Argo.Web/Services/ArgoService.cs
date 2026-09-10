@@ -1,11 +1,10 @@
-using Argo.Data;
+using Argo.Application.Repositories;
 using Argo.Domain.Entities;
 using Argo.Domain.Enums;
 using Argo.Domain.ValueObjects;
 using Argo.DTO;
 using Argo.Extensions;
 using FluentResults;
-using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
 namespace Argo.Services;
@@ -14,10 +13,18 @@ namespace Argo.Services;
 /// Implements Argo application operations for project portfolio management,
 /// intake persistence, and user retrieval.
 /// </summary>
-/// <param name="dbContext">The EF Core context used for all persistence operations.</param>
-public class ArgoService(ArgoDbContext dbContext) : IArgoService
+/// <param name="projectRepository">The repository used for project persistence operations.</param>
+/// <param name="workItemRepository">The repository used for work item persistence operations.</param>
+/// <param name="activityRepository">The repository used for activity persistence operations.</param>
+/// <param name="raidItemRepository">The repository used for RAID item persistence operations.</param>
+/// <param name="userRepository">The repository used for user persistence operations.</param>
+public class ArgoService(IProjectRepository projectRepository, IWorkItemRepository workItemRepository, IActivityRepository activityRepository, IRaidItemRepository raidItemRepository, IUserRepository userRepository) : IArgoService
 {
-    private readonly ArgoDbContext dbContext = dbContext;
+    private readonly IProjectRepository projectRepository = projectRepository;
+    private readonly IWorkItemRepository workItemRepository = workItemRepository;
+    private readonly IActivityRepository activityRepository = activityRepository;
+    private readonly IRaidItemRepository raidItemRepository = raidItemRepository;
+    private readonly IUserRepository userRepository = userRepository;
 
     /// <summary>
     /// Executes the current ingestion workflow.
@@ -39,14 +46,7 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
     /// <returns>A result containing the project hierarchy when authorization succeeds.</returns>
     public async Task<Result<IReadOnlyCollection<Project>>> GetProjectsAsync()
     {
-        var projects = await dbContext.Projects.AsNoTracking()
-            .Include(p => p.Owner)
-            .Include(p => p.WorkItems)
-                .ThenInclude(a => a.Activities)
-            .Include(p => p.RaidItems)
-            .ToListAsync();
-
-        return projects;
+        return await projectRepository.GetAllWithDetailsAsync();
     }
 
     /// <summary>
@@ -58,16 +58,7 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
     /// <returns>A result containing user records sorted by display name.</returns>
     public async Task<Result<IReadOnlyCollection<User>>> GetUsersAsync(bool projectManagersOnly = false)
     {
-        var query = dbContext.Users.AsNoTracking();
-
-        if (projectManagersOnly)
-            query = query.Where(u => u.IsProjectManager);
-
-        var users = await query
-            .OrderBy(u => u.DisplayName)
-            .ToListAsync();
-
-        return users;
+        return await userRepository.GetAllAsync(projectManagersOnly);
     }
 
     /// <summary>
@@ -98,7 +89,13 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
 
         var owner = ownerResult.Value;
 
-        var idValue = await GenerateUniqueIdAsync("PRJ", async candidate => await dbContext.Projects.AnyAsync(p => p.Id == ProjectId.Create(candidate).Value));
+        var idValue = await GenerateUniqueIdAsync("PRJ", async candidate =>
+        {
+            var projectId = ProjectId.Create(candidate).Value;
+            var exists = await projectRepository.GetByIdAsync(projectId);
+            return exists.IsSuccess && exists.Value is not null;
+        });
+
         var id = ProjectId.Create(idValue).Value;
         var submittedAt = DateTime.Now;
 
@@ -120,8 +117,8 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
 
         var project = projectResult.Value;
 
-        dbContext.Projects.Add(project);
-        await dbContext.SaveChangesAsync();
+        projectRepository.Add(project);
+        await projectRepository.SaveChangesAsync();
 
         return MapToDto(project, owner?.DisplayName ?? "Unassigned");
     }
@@ -134,9 +131,11 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
     /// <returns>A result indicating success or the reason for failure.</returns>
     public async Task<Result> UpdateProject(string id, ProjectDTO dto)
     {
-        var existing = await dbContext.Projects.FirstOrDefaultAsync(p => p.Id == ProjectId.Create(id).Value);
-        if (existing is null)
+        var existingResult = await projectRepository.GetByIdAsync(ProjectId.Create(id).Value);
+        if (existingResult.IsFailed || existingResult.Value is null)
             return Result.Fail(APIErrors.NotFoundError($"Project {id} was not found"));
+
+        var existing = existingResult.Value;
 
         ProjectStatus status;
         ProjectHealth health;
@@ -161,7 +160,7 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
         if (updateResult.IsFailed)
             return ToDomainFailure(updateResult.Errors);
 
-        await dbContext.SaveChangesAsync();
+        await projectRepository.SaveChangesAsync();
         return Result.Ok();
     }
 
@@ -176,11 +175,11 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
         if (string.IsNullOrWhiteSpace(ownerName) || ownerName == "Unassigned")
             return Result.Ok<User?>(null);
 
-        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.DisplayName == ownerName);
-        if (user is null)
+        var userResult = await userRepository.GetByDisplayNameAsync(ownerName);
+        if (userResult.IsFailed || userResult.Value is null)
             return Result.Fail<User?>(APIErrors.NotFoundError($"User {ownerName} was not found"));
 
-        return Result.Ok<User?>(user);
+        return Result.Ok<User?>(userResult.Value);
     }
 
     /// <summary>
@@ -190,7 +189,13 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
     /// <returns>A result indicating whether the delete operation completed.</returns>
     public async Task<Result> DeleteProject(string id)
     {
-        await dbContext.Projects.Where(p => p.Id == ProjectId.Create(id).Value).ExecuteDeleteAsync();
+        var existingResult = await projectRepository.GetByIdAsync(ProjectId.Create(id).Value);
+        if (existingResult.IsSuccess && existingResult.Value is not null)
+        {
+            projectRepository.Remove(existingResult.Value);
+            await projectRepository.SaveChangesAsync();
+        }
+
         return Result.Ok();
     }
 
@@ -211,7 +216,12 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
             return Result.Fail<WorkItemDTO>(APIErrors.ValidationError(ex.Message));
         }
 
-        var idValue = await GenerateUniqueIdAsync("WI", async candidate => await dbContext.WorkItems.AnyAsync(w => w.Id == WorkItemId.Create(candidate).Value));
+        var idValue = await GenerateUniqueIdAsync("WI", async candidate =>
+        {
+            var workItemId = WorkItemId.Create(candidate).Value;
+            var existing = await workItemRepository.GetByIdAsync(workItemId);
+            return existing.IsSuccess && existing.Value is not null;
+        });
         var id = WorkItemId.Create(idValue).Value;
 
         var workItemResult = WorkItem.Create(
@@ -233,8 +243,8 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
 
         var workItem = workItemResult.Value;
 
-        dbContext.WorkItems.Add(workItem);
-        await dbContext.SaveChangesAsync();
+        workItemRepository.Add(workItem);
+        await workItemRepository.SaveChangesAsync();
 
         return MapToDto(workItem);
     }
@@ -247,9 +257,11 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
     /// <returns>A result indicating success or the reason for failure.</returns>
     public async Task<Result> UpdateWorkItem(string id, WorkItemDTO dto)
     {
-        var existing = await dbContext.WorkItems.FirstOrDefaultAsync(w => w.Id == WorkItemId.Create(id).Value);
-        if (existing is null)
+        var existingResult = await workItemRepository.GetByIdAsync(WorkItemId.Create(id).Value);
+        if (existingResult.IsFailed || existingResult.Value is null)
             return Result.Fail(APIErrors.NotFoundError($"Work item {id} was not found"));
+
+        var existing = existingResult.Value;
 
         WorkItemStatus status;
         try
@@ -277,7 +289,7 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
         if (updateResult.IsFailed)
             return ToDomainFailure(updateResult.Errors);
 
-        await dbContext.SaveChangesAsync();
+        await workItemRepository.SaveChangesAsync();
         return Result.Ok();
     }
 
@@ -298,7 +310,12 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
             return Result.Fail<ActivityDTO>(APIErrors.ValidationError(ex.Message));
         }
 
-        var idValue = await GenerateUniqueIdAsync("ACT", async candidate => await dbContext.Activities.AnyAsync(a => a.Id == ActivityId.Create(candidate).Value));
+        var idValue = await GenerateUniqueIdAsync("ACT", async candidate =>
+        {
+            var activityId = ActivityId.Create(candidate).Value;
+            var existing = await activityRepository.GetByIdAsync(activityId);
+            return existing.IsSuccess && existing.Value is not null;
+        });
         var id = ActivityId.Create(idValue).Value;
 
         var activityResult = Activity.Create(
@@ -316,8 +333,8 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
 
         var activity = activityResult.Value;
 
-        dbContext.Activities.Add(activity);
-        await dbContext.SaveChangesAsync();
+        activityRepository.Add(activity);
+        await activityRepository.SaveChangesAsync();
 
         return MapToDto(activity);
     }
@@ -330,9 +347,11 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
     /// <returns>A result indicating success or the reason for failure.</returns>
     public async Task<Result> UpdateActivity(string id, ActivityDTO dto)
     {
-        var existing = await dbContext.Activities.FirstOrDefaultAsync(a => a.Id == ActivityId.Create(id).Value);
-        if (existing is null)
+        var existingResult = await activityRepository.GetByIdAsync(ActivityId.Create(id).Value);
+        if (existingResult.IsFailed || existingResult.Value is null)
             return Result.Fail(APIErrors.NotFoundError($"Activity {id} was not found"));
+
+        var existing = existingResult.Value;
 
         ActivityStatus status;
         try
@@ -356,7 +375,7 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
         if (updateResult.IsFailed)
             return ToDomainFailure(updateResult.Errors);
 
-        await dbContext.SaveChangesAsync();
+        await activityRepository.SaveChangesAsync();
         return Result.Ok();
     }
 
@@ -377,7 +396,12 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
             return Result.Fail<RaidItemDTO>(APIErrors.ValidationError(ex.Message));
         }
 
-        var idValue = await GenerateUniqueIdAsync("RAID", async candidate => await dbContext.RaidItems.AnyAsync(r => r.Id == RaidItemId.Create(candidate).Value));
+        var idValue = await GenerateUniqueIdAsync("RAID", async candidate =>
+        {
+            var raidItemId = RaidItemId.Create(candidate).Value;
+            var existing = await raidItemRepository.GetByIdAsync(raidItemId);
+            return existing.IsSuccess && existing.Value is not null;
+        });
         var id = RaidItemId.Create(idValue).Value;
 
         var raidItemResult = RaidItem.Create(
@@ -393,8 +417,8 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
 
         var raidItem = raidItemResult.Value;
 
-        dbContext.RaidItems.Add(raidItem);
-        await dbContext.SaveChangesAsync();
+        raidItemRepository.Add(raidItem);
+        await raidItemRepository.SaveChangesAsync();
 
         return MapToDto(raidItem);
     }
@@ -407,9 +431,11 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
     /// <returns>A result indicating success or the reason for failure.</returns>
     public async Task<Result> UpdateRaidItem(string id, RaidItemDTO dto)
     {
-        var existing = await dbContext.RaidItems.FirstOrDefaultAsync(r => r.Id == RaidItemId.Create(id).Value);
-        if (existing is null)
+        var existingResult = await raidItemRepository.GetByIdAsync(RaidItemId.Create(id).Value);
+        if (existingResult.IsFailed || existingResult.Value is null)
             return Result.Fail(APIErrors.NotFoundError($"RAID item {id} was not found"));
+
+        var existing = existingResult.Value;
 
         RaidItemType type;
         try
@@ -425,7 +451,7 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
         if (updateResult.IsFailed)
             return ToDomainFailure(updateResult.Errors);
 
-        await dbContext.SaveChangesAsync();
+        await raidItemRepository.SaveChangesAsync();
         return Result.Ok();
     }
 
@@ -442,8 +468,18 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
     {
         var request = dto.Request;
 
-        var requestId = await GenerateUniqueIdAsync("REQ", async candidate => await dbContext.Projects.AnyAsync(p => p.SourceRequestId == candidate));
-        var newProjectIdValue = await GenerateUniqueIdAsync("PRJ", async candidate => await dbContext.Projects.AnyAsync(p => p.Id == ProjectId.Create(candidate).Value));
+        var requestId = await GenerateUniqueIdAsync("REQ", async candidate =>
+        {
+            var existing = await projectRepository.ExistsBySourceRequestIdAsync(candidate);
+            return existing.IsSuccess && existing.Value;
+        });
+
+        var newProjectIdValue = await GenerateUniqueIdAsync("PRJ", async candidate =>
+        {
+            var projectId = ProjectId.Create(candidate).Value;
+            var existing = await projectRepository.GetByIdAsync(projectId);
+            return existing.IsSuccess && existing.Value is not null;
+        });
         var title = string.IsNullOrWhiteSpace(request.RequestTitle) ? "Untitled request" : request.RequestTitle;
 
         var projectResult = Project.Create(
@@ -465,8 +501,8 @@ public class ArgoService(ArgoDbContext dbContext) : IArgoService
 
         var project = projectResult.Value;
 
-        dbContext.Projects.Add(project);
-        await dbContext.SaveChangesAsync();
+        projectRepository.Add(project);
+        await projectRepository.SaveChangesAsync();
 
         return new IntakeSubmissionResultDTO(requestId, newProjectIdValue);
     }

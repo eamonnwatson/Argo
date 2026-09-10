@@ -9,7 +9,7 @@ namespace Argo.Data.Configurations;
 /// <summary>
 /// Configures EF Core mapping for the <see cref="Project"/> aggregate.
 /// </summary>
-public class ProjectConfiguration : IEntityTypeConfiguration<Project>
+internal class ProjectConfiguration : IEntityTypeConfiguration<Project>
 {
     public void Configure(EntityTypeBuilder<Project> builder)
     {

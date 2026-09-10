@@ -1,3 +1,4 @@
+using Argo.Application.Repositories;
 using Argo.Domain.Entities;
 using Argo.Domain.ValueObjects;
 using Argo.Persistence.Common;
@@ -10,7 +11,7 @@ namespace Argo.Data.Repositories;
 /// EF Core-backed implementation of <see cref="IRaidItemRepository"/>.
 /// </summary>
 /// <param name="dbContext">The EF Core context used for persistence operations.</param>
-public class RaidItemRepository(ArgoDbContext dbContext) : BaseRepository, IRaidItemRepository
+internal class RaidItemRepository(ArgoDbContext dbContext) : BaseRepository, IRaidItemRepository
 {
     private readonly ArgoDbContext dbContext = dbContext;
 

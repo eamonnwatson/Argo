@@ -8,7 +8,7 @@ namespace Argo.Persistence.Common;
 /// Base class for repositories providing a common wrapper for executing database
 /// operations and translating exceptions into FluentResults results.
 /// </summary>
-public abstract class BaseRepository
+internal abstract class BaseRepository
 {
     /// <summary>
     /// Executes a database operation, returning the result wrapped in a <see cref="Result{T}"/>.

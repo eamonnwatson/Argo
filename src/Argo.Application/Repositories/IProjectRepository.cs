@@ -2,7 +2,7 @@ using Argo.Domain.Entities;
 using Argo.Domain.ValueObjects;
 using FluentResults;
 
-namespace Argo.Data.Repositories;
+namespace Argo.Application.Repositories;
 
 /// <summary>
 /// Provides data access for <see cref="Project"/> aggregates, including their
@@ -21,4 +21,9 @@ public interface IProjectRepository : IRepository<Project, ProjectId>
     /// entries eagerly loaded.
     /// </summary>
     Task<Result<Project?>> GetByIdWithDetailsAsync(ProjectId id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Determines whether a project exists for the supplied intake request identifier.
+    /// </summary>
+    Task<Result<bool>> ExistsBySourceRequestIdAsync(string sourceRequestId, CancellationToken cancellationToken = default);
 }

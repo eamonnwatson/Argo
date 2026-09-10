@@ -1,3 +1,4 @@
+using Argo.Application.Repositories;
 using Argo.Domain.Entities;
 using Argo.Domain.ValueObjects;
 using Argo.Persistence.Common;
@@ -10,7 +11,7 @@ namespace Argo.Data.Repositories;
 /// EF Core-backed implementation of <see cref="IUserRepository"/>.
 /// </summary>
 /// <param name="dbContext">The EF Core context used for persistence operations.</param>
-public class UserRepository(ArgoDbContext dbContext) : BaseRepository, IUserRepository
+internal class UserRepository(ArgoDbContext dbContext) : BaseRepository, IUserRepository
 {
     private readonly ArgoDbContext dbContext = dbContext;
 
@@ -21,6 +22,10 @@ public class UserRepository(ArgoDbContext dbContext) : BaseRepository, IUserRepo
     /// <inheritdoc />
     public Task<Result<IReadOnlyCollection<User>>> GetAllAsync(CancellationToken cancellationToken = default) =>
         ExecuteAsync(async () => (IReadOnlyCollection<User>)await dbContext.Users.OrderBy(u => u.DisplayName).ToListAsync(cancellationToken));
+
+    /// <inheritdoc />
+    public Task<Result<User?>> GetByDisplayNameAsync(string displayName, CancellationToken cancellationToken = default) =>
+        ExecuteAsync(() => dbContext.Users.FirstOrDefaultAsync(u => u.DisplayName == displayName, cancellationToken));
 
     /// <inheritdoc />
     public Task<Result<IReadOnlyCollection<User>>> GetAllAsync(bool projectManagersOnly, CancellationToken cancellationToken = default)

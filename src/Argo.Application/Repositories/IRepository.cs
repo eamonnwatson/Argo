@@ -1,6 +1,6 @@
 using FluentResults;
 
-namespace Argo.Data.Repositories;
+namespace Argo.Application.Repositories;
 
 /// <summary>
 /// Provides basic asynchronous CRUD operations shared by all Argo persistence repositories.

@@ -1,3 +1,4 @@
+using Argo.Application.Repositories;
 using Argo.Domain.Entities;
 using Argo.Domain.ValueObjects;
 using Argo.Persistence.Common;
@@ -10,7 +11,7 @@ namespace Argo.Data.Repositories;
 /// EF Core-backed implementation of <see cref="IProjectRepository"/>.
 /// </summary>
 /// <param name="dbContext">The EF Core context used for persistence operations.</param>
-public class ProjectRepository(ArgoDbContext dbContext) : BaseRepository, IProjectRepository
+internal class ProjectRepository(ArgoDbContext dbContext) : BaseRepository, IProjectRepository
 {
     private readonly ArgoDbContext dbContext = dbContext;
 
@@ -36,9 +37,13 @@ public class ProjectRepository(ArgoDbContext dbContext) : BaseRepository, IProje
         ExecuteAsync(async () => (IReadOnlyCollection<Project>)await dbContext.Projects.AsNoTracking()
             .Include(p => p.Owner)
             .Include(p => p.WorkItems)
-                .ThenInclude(w => w.Activities)
+            .ThenInclude(w => w.Activities)
             .Include(p => p.RaidItems)
             .ToListAsync(cancellationToken));
+
+    /// <inheritdoc />
+    public Task<Result<bool>> ExistsBySourceRequestIdAsync(string sourceRequestId, CancellationToken cancellationToken = default) =>
+        ExecuteAsync(() => dbContext.Projects.AnyAsync(p => p.SourceRequestId == sourceRequestId, cancellationToken));
 
     /// <inheritdoc />
     public void Add(Project entity) => dbContext.Projects.Add(entity);

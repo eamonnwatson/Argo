@@ -1,5 +1,5 @@
-using Argo.Data;
-using Microsoft.EntityFrameworkCore;
+using Argo.Application.Outbox;
+using Argo.Application.Repositories;
 
 namespace Argo.Outbox;
 
@@ -39,38 +39,39 @@ public class OutboxProcessor(IServiceScopeFactory scopeFactory, ILogger<OutboxPr
     private async Task ProcessPendingMessagesAsync(CancellationToken cancellationToken)
     {
         using var scope = scopeFactory.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ArgoDbContext>();
+        var outboxRepository = scope.ServiceProvider.GetRequiredService<IOutboxMessageRepository>();
         var dispatcher = scope.ServiceProvider.GetRequiredService<IOutboxMessageDispatcher>();
 
         var now = DateTime.UtcNow;
+        var pendingMessagesResult = await outboxRepository.GetPendingAsync(now, cancellationToken);
+        if (pendingMessagesResult.IsFailed)
+        {
+            logger.LogWarning("Unable to load pending outbox messages: {Error}", pendingMessagesResult.Errors.FirstOrDefault()?.Message ?? "unknown error");
+            return;
+        }
 
-        var pendingMessages = await dbContext.OutboxMessages
-            .Where(m => m.ProcessedOnUtc == null && (m.NextAttemptUtc == null || m.NextAttemptUtc <= now))
-            .OrderBy(m => m.OccurredOnUtc)
-            .ToListAsync(cancellationToken);
-
-        foreach (var message in pendingMessages)
+        foreach (var message in pendingMessagesResult.Value)
         {
             try
             {
                 await dispatcher.DispatchAsync(message, cancellationToken);
-                message.ProcessedOnUtc = DateTime.UtcNow;
-                message.Error = null;
+                var processedResult = await outboxRepository.MarkProcessedAsync(message.Id, cancellationToken);
+                if (processedResult.IsFailed)
+                    logger.LogWarning("Failed to mark outbox message {MessageId} as processed: {Error}", message.Id, processedResult.Errors.FirstOrDefault()?.Message ?? "unknown error");
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                message.RetryCount++;
-                message.Error = ex.Message;
+                var retryCount = 1;
+                var backoffSeconds = Math.Min(Math.Pow(2, retryCount), MaxBackoffSeconds);
+                var nextAttemptUtc = DateTime.UtcNow.AddSeconds(backoffSeconds);
 
-                var backoffSeconds = Math.Min(Math.Pow(2, message.RetryCount), MaxBackoffSeconds);
-                message.NextAttemptUtc = DateTime.UtcNow.AddSeconds(backoffSeconds);
+                var failedResult = await outboxRepository.MarkFailedAsync(message.Id, ex.Message, retryCount, nextAttemptUtc, cancellationToken);
+                if (failedResult.IsFailed)
+                    logger.LogWarning("Failed to mark outbox message {MessageId} as failed: {Error}", message.Id, failedResult.Errors.FirstOrDefault()?.Message ?? "unknown error");
 
                 logger.LogWarning(ex, "Failed to process outbox message {MessageId} (attempt {RetryCount}); next attempt at {NextAttemptUtc}.",
-                    message.Id, message.RetryCount, message.NextAttemptUtc);
+                    message.Id, retryCount, nextAttemptUtc);
             }
         }
-
-        if (pendingMessages.Count > 0)
-            await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

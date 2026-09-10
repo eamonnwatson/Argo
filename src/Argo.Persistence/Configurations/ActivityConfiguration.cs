@@ -9,7 +9,7 @@ namespace Argo.Data.Configurations;
 /// <summary>
 /// Configures EF Core mapping for the <see cref="Activity"/> entity.
 /// </summary>
-public class ActivityConfiguration : IEntityTypeConfiguration<Activity>
+internal class ActivityConfiguration : IEntityTypeConfiguration<Activity>
 {
     public void Configure(EntityTypeBuilder<Activity> builder)
     {

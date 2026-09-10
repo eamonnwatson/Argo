@@ -5,7 +5,7 @@ namespace Argo.Outbox;
 /// side effects (such as sending email) are captured atomically with the aggregate change
 /// that produced them.
 /// </summary>
-public class OutboxMessage
+internal class OutboxMessage
 {
     /// <summary>
     /// Gets or sets the unique identifier of the outbox message.
