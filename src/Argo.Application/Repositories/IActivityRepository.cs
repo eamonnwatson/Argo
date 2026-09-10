@@ -1,0 +1,16 @@
+using Argo.Domain.Entities;
+using Argo.Domain.ValueObjects;
+using FluentResults;
+
+namespace Argo.Data.Repositories;
+
+/// <summary>
+/// Provides data access for <see cref="Activity"/> entities.
+/// </summary>
+public interface IActivityRepository : IRepository<Activity, ActivityId>
+{
+    /// <summary>
+    /// Retrieves all activities belonging to the specified work item.
+    /// </summary>
+    Task<Result<IReadOnlyCollection<Activity>>> GetByWorkItemIdAsync(WorkItemId workItemId, CancellationToken cancellationToken = default);
+}
