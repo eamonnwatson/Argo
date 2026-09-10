@@ -1,9 +1,9 @@
 using Argo.Data;
-using Argo.DTO;
-using Argo.Extensions;
 using Argo.Domain.Entities;
 using Argo.Domain.Enums;
 using Argo.Domain.ValueObjects;
+using Argo.DTO;
+using Argo.Extensions;
 using FluentResults;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;

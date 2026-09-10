@@ -1,6 +1,6 @@
-using Argo.DTO;
 using Argo.Domain.Entities;
 using Argo.Domain.Enums;
+using Argo.DTO;
 using Argo.Services;
 
 namespace Argo.Extensions;
