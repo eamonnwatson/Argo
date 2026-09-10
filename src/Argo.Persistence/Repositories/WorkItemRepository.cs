@@ -1,5 +1,7 @@
 using Argo.Domain.Entities;
 using Argo.Domain.ValueObjects;
+using Argo.Persistence.Common;
+using FluentResults;
 using Microsoft.EntityFrameworkCore;
 
 namespace Argo.Data.Repositories;
@@ -8,24 +10,24 @@ namespace Argo.Data.Repositories;
 /// EF Core-backed implementation of <see cref="IWorkItemRepository"/>.
 /// </summary>
 /// <param name="dbContext">The EF Core context used for persistence operations.</param>
-public class WorkItemRepository(ArgoDbContext dbContext) : IWorkItemRepository
+public class WorkItemRepository(ArgoDbContext dbContext) : BaseRepository, IWorkItemRepository
 {
     private readonly ArgoDbContext dbContext = dbContext;
 
     /// <inheritdoc />
-    public async Task<WorkItem?> GetByIdAsync(WorkItemId id, CancellationToken cancellationToken = default) =>
-        await dbContext.WorkItems.FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
+    public Task<Result<WorkItem?>> GetByIdAsync(WorkItemId id, CancellationToken cancellationToken = default) =>
+        ExecuteAsync(() => dbContext.WorkItems.FirstOrDefaultAsync(w => w.Id == id, cancellationToken));
 
     /// <inheritdoc />
-    public async Task<IReadOnlyCollection<WorkItem>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        await dbContext.WorkItems.ToListAsync(cancellationToken);
+    public Task<Result<IReadOnlyCollection<WorkItem>>> GetAllAsync(CancellationToken cancellationToken = default) =>
+        ExecuteAsync(async () => (IReadOnlyCollection<WorkItem>)await dbContext.WorkItems.ToListAsync(cancellationToken));
 
     /// <inheritdoc />
-    public async Task<IReadOnlyCollection<WorkItem>> GetByProjectIdAsync(ProjectId projectId, CancellationToken cancellationToken = default) =>
-        await dbContext.WorkItems
+    public Task<Result<IReadOnlyCollection<WorkItem>>> GetByProjectIdAsync(ProjectId projectId, CancellationToken cancellationToken = default) =>
+        ExecuteAsync(async () => (IReadOnlyCollection<WorkItem>)await dbContext.WorkItems
             .Where(w => w.ProjectId == projectId)
             .Include(w => w.Activities)
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken));
 
     /// <inheritdoc />
     public void Add(WorkItem entity) => dbContext.WorkItems.Add(entity);
@@ -34,6 +36,6 @@ public class WorkItemRepository(ArgoDbContext dbContext) : IWorkItemRepository
     public void Remove(WorkItem entity) => dbContext.WorkItems.Remove(entity);
 
     /// <inheritdoc />
-    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
-        dbContext.SaveChangesAsync(cancellationToken);
+    public Task<Result<int>> SaveChangesAsync(CancellationToken cancellationToken = default) =>
+        ExecuteAsync(() => dbContext.SaveChangesAsync(cancellationToken));
 }

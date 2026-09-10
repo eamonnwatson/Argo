@@ -1,5 +1,7 @@
 using Argo.Domain.Entities;
 using Argo.Domain.ValueObjects;
+using Argo.Persistence.Common;
+using FluentResults;
 using Microsoft.EntityFrameworkCore;
 
 namespace Argo.Data.Repositories;
@@ -8,35 +10,35 @@ namespace Argo.Data.Repositories;
 /// EF Core-backed implementation of <see cref="IProjectRepository"/>.
 /// </summary>
 /// <param name="dbContext">The EF Core context used for persistence operations.</param>
-public class ProjectRepository(ArgoDbContext dbContext) : IProjectRepository
+public class ProjectRepository(ArgoDbContext dbContext) : BaseRepository, IProjectRepository
 {
     private readonly ArgoDbContext dbContext = dbContext;
 
     /// <inheritdoc />
-    public async Task<Project?> GetByIdAsync(ProjectId id, CancellationToken cancellationToken = default) =>
-        await dbContext.Projects.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+    public Task<Result<Project?>> GetByIdAsync(ProjectId id, CancellationToken cancellationToken = default) =>
+        ExecuteAsync(() => dbContext.Projects.FirstOrDefaultAsync(p => p.Id == id, cancellationToken));
 
     /// <inheritdoc />
-    public async Task<Project?> GetByIdWithDetailsAsync(ProjectId id, CancellationToken cancellationToken = default) =>
-        await dbContext.Projects
+    public Task<Result<Project?>> GetByIdWithDetailsAsync(ProjectId id, CancellationToken cancellationToken = default) =>
+        ExecuteAsync(() => dbContext.Projects
             .Include(p => p.Owner)
             .Include(p => p.WorkItems)
                 .ThenInclude(w => w.Activities)
             .Include(p => p.RaidItems)
-            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken));
 
     /// <inheritdoc />
-    public async Task<IReadOnlyCollection<Project>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        await dbContext.Projects.ToListAsync(cancellationToken);
+    public Task<Result<IReadOnlyCollection<Project>>> GetAllAsync(CancellationToken cancellationToken = default) =>
+        ExecuteAsync(async () => (IReadOnlyCollection<Project>)await dbContext.Projects.ToListAsync(cancellationToken));
 
     /// <inheritdoc />
-    public async Task<IReadOnlyCollection<Project>> GetAllWithDetailsAsync(CancellationToken cancellationToken = default) =>
-        await dbContext.Projects.AsNoTracking()
+    public Task<Result<IReadOnlyCollection<Project>>> GetAllWithDetailsAsync(CancellationToken cancellationToken = default) =>
+        ExecuteAsync(async () => (IReadOnlyCollection<Project>)await dbContext.Projects.AsNoTracking()
             .Include(p => p.Owner)
             .Include(p => p.WorkItems)
                 .ThenInclude(w => w.Activities)
             .Include(p => p.RaidItems)
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken));
 
     /// <inheritdoc />
     public void Add(Project entity) => dbContext.Projects.Add(entity);
@@ -45,6 +47,6 @@ public class ProjectRepository(ArgoDbContext dbContext) : IProjectRepository
     public void Remove(Project entity) => dbContext.Projects.Remove(entity);
 
     /// <inheritdoc />
-    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
-        dbContext.SaveChangesAsync(cancellationToken);
+    public Task<Result<int>> SaveChangesAsync(CancellationToken cancellationToken = default) =>
+        ExecuteAsync(() => dbContext.SaveChangesAsync(cancellationToken));
 }
