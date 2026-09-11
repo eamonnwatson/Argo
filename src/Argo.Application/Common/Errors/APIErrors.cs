@@ -9,11 +9,6 @@ namespace Argo.Application.Common.Errors;
 public static class APIErrors
 {
     /// <summary>
-    /// Gets an error instance indicating the current caller is not authorized.
-    /// </summary>
-    public static IError UnauthorizedError => new Error("Unauthorized").WithMetadata("Unauthorized", true);
-
-    /// <summary>
     /// Creates an error instance indicating a requested resource could not be found.
     /// </summary>
     /// <param name="message">The not-found error message to expose to the API caller.</param>

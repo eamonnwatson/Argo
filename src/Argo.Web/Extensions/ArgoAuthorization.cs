@@ -65,7 +65,7 @@ public sealed class ArgoUserAuthorizationHandler(IUserRepository userRepository)
 public sealed class ArgoAuthorizationResultHandler : IAuthorizationMiddlewareResultHandler
 {
     private readonly AuthorizationMiddlewareResultHandler defaultHandler = new();
-    private static readonly string[] value = new[] { "Access Denied" };
+    private static readonly string[] value = ["Access Denied"];
 
     /// <summary>
     /// Handles the outcome of authorization for the current request.

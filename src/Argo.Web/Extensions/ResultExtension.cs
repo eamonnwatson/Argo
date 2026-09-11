@@ -21,9 +21,6 @@ public static class ResultExtension
         if (result.IsSuccess)
             return Results.Ok(result.ValueOrDefault);
 
-        if (result.Errors.Where(e => e.HasMetadataKey("Unauthorized")).Any())
-            return Results.Json(new[] { "Access Denied" }, statusCode: StatusCodes.Status401Unauthorized);
-
         if (result.Errors.Where(e => e.HasMetadataKey("NotFound")).Any())
             return Results.NotFound(result.Errors[0].Message);
 
@@ -42,9 +39,6 @@ public static class ResultExtension
     {
         if (result.IsSuccess)
             return Results.NoContent();
-
-        if (result.Errors.Where(e => e.HasMetadataKey("Unauthorized")).Any())
-            return Results.Json(new[] { "Access Denied" }, statusCode: StatusCodes.Status401Unauthorized);
 
         if (result.Errors.Where(e => e.HasMetadataKey("NotFound")).Any())
             return Results.NotFound(result.Errors[0].Message);
