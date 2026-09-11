@@ -821,50 +821,6 @@
                 Argo.toast("Could not save the RAID record \u2014 " + error.message);
             }
         });
-    document.getElementById("export-btn")
-        .addEventListener("click", function () {
-            var blob = new Blob([JSON.stringify(data, null, 2)], {
-                type: "application/json"
-            });
-            var url = URL.createObjectURL(blob);
-            var link = document.createElement("a");
-            link.href = url;
-            link.download = "argo-portfolio-backup-" + new Date()
-                .toISOString()
-                .slice(0, 10) + ".json";
-            link.click();
-            URL.revokeObjectURL(url);
-            Argo.toast("Backup downloaded");
-        });
-    document.getElementById("import-btn")
-        .addEventListener("click", function () {
-            document.getElementById("import-file")
-                .click();
-        });
-    document.getElementById("import-file")
-        .addEventListener("change", function (event) {
-            var file = event.target.files[0];
-            if (!file) return;
-            var reader = new FileReader();
-            reader.onload = async function () {
-                try {
-                    var restored = JSON.parse(String(reader.result));
-                    if (!Array.isArray(restored.projects) || !Array.isArray(restored.workItems) || !Array.isArray(restored.raidItems)) throw new Error("Invalid");
-                    restored = normalize(restored);
-                    await apiSend("POST", "/portfolio/import", restored);
-                    await refresh();
-                    selectedId = data.projects[0] ? data.projects[0].id : "";
-                    expandedWorkIds = {};
-                    render();
-                    Argo.toast("Backup imported to the shared Argo database");
-                } catch (error) {
-                    console.error(error);
-                    Argo.toast("That file is not a valid Argo Portfolio backup, or the server could not be reached: " + error.message);
-                }
-            };
-            reader.readAsText(file);
-            event.target.value = "";
-        });
 
     async function init() {
         try {
