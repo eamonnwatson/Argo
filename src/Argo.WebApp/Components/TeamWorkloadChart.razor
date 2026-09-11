@@ -1,37 +1,37 @@
 @namespace Argo.WebApp.Components
 
-<MudPaper Class="@($"pa-4 mb-4 {Class}")" Elevation="1">
-    <MudText Typo="Typo.h6" Class="mb-2">Team workload</MudText>
-    <MudSimpleTable Dense="true" Hover="true">
-        <thead>
-            <tr>
-                <th>Owner</th>
-                <th>Projects</th>
-                <th>On track</th>
-                <th>At risk / blocked</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var group in Workload)
+<MudPaper Class="@($"pa-4 mb-4 {Class}")" Elevation="0" Style="box-shadow:var(--shadow);">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start" Class="mb-3">
+        <div>
+            <MudText Typo="Typo.h6">Team workload &amp; project health</MudText>
+            <MudText Typo="Typo.caption" Class="mud-secondary-text">Each project appears once. At Risk and Blocked take precedence so attention items remain visible.</MudText>
+        </div>
+        <div class="chart-legend">
+            @foreach (var category in Categories)
             {
-                <tr>
-                    <td>@group.Owner</td>
-                    <td>@group.Total</td>
-                    <td>@group.OnTrack</td>
-                    <td>
-                        @if (group.AtRisk > 0)
-                        {
-                            <MudChip T="string" Color="Color.Error" Size="Size.Small">@group.AtRisk</MudChip>
-                        }
-                        else
-                        {
-                            <span>0</span>
-                        }
-                    </td>
-                </tr>
+                <span class="legend-item"><span class="legend-dot chart-@category"></span>@category.Replace('-', ' ')</span>
             }
-        </tbody>
-    </MudSimpleTable>
+        </div>
+    </MudStack>
+
+    <div class="owner-bars">
+        @foreach (var owner in Workload)
+        {
+            <div class="owner-bar-row">
+                <div class="owner-name">@owner.Owner</div>
+                <div class="owner-track">
+                    @foreach (var segment in owner.Segments)
+                    {
+                        <div class="owner-segment chart-@segment.Category" style="width:@(segment.Percent)%;">@segment.Count</div>
+                    }
+                </div>
+                <div class="owner-total">
+                    @owner.Total
+                    <span>assigned</span>
+                </div>
+            </div>
+        }
+    </div>
 </MudPaper>
 
 @code {
@@ -39,16 +39,61 @@
     [Parameter, EditorRequired] public List<UserDTO> Users { get; set; } = [];
     [Parameter] public string Class { get; set; } = string.Empty;
 
-    private record OwnerWorkload(string Owner, int Total, int OnTrack, int AtRisk);
+    private static readonly string[] Categories = ["Waiting", "In-Progress", "At-Risk", "Blocked", "Done"];
 
-    private List<OwnerWorkload> Workload =>
-        Projects
-            .GroupBy(p => p.Owner)
-            .Select(g => new OwnerWorkload(
-                g.Key,
-                g.Count(),
-                g.Count(p => p.Health == "On Track" || p.Health == "Complete"),
-                g.Count(p => p.Health is "At Risk" or "Blocked")))
-            .OrderByDescending(g => g.Total)
-            .ToList();
+    private record OwnerSegment(string Category, int Count, double Percent);
+    private record OwnerWorkload(string Owner, int Total, List<OwnerSegment> Segments);
+
+    private static string Categorize(ProjectDTO project)
+    {
+        if (project.Health == "Blocked")
+        {
+            return "Blocked";
+        }
+        if (project.Health == "At Risk")
+        {
+            return "At-Risk";
+        }
+        if (project.Status == "Done")
+        {
+            return "Done";
+        }
+        if (project.Status == "In Progress")
+        {
+            return "In-Progress";
+        }
+        return "Waiting";
+    }
+
+    private List<OwnerWorkload> Workload
+    {
+        get
+        {
+            var byOwner = Projects.ToLookup(p => p.Owner);
+
+            var owners = Users
+                .Where(u => u.IsProjectManager)
+                .Select(u => u.DisplayName)
+                .Union(Projects.Select(p => p.Owner))
+                .Distinct()
+                .ToList();
+
+            return owners
+                .Select(owner =>
+                {
+                    var projects = byOwner[owner].ToList();
+                    var total = projects.Count;
+                    var segments = projects
+                        .Select(Categorize)
+                        .GroupBy(c => c)
+                        .OrderBy(c => Array.IndexOf(Categories, c.Key))
+                        .Select(c => new OwnerSegment(c.Key, c.Count(), total == 0 ? 0 : 100.0 * c.Count() / total))
+                        .ToList();
+                    return new OwnerWorkload(owner, total, segments);
+                })
+                .OrderByDescending(g => g.Total)
+                .ThenBy(g => g.Owner)
+                .ToList();
+        }
+    }
 }

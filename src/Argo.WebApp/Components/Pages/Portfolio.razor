@@ -2,16 +2,10 @@
 @inject IArgoService ArgoService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
-@inject IJSRuntime JsRuntime
 
 <PageTitle>Argo Portfolio</PageTitle>
 
-<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudStack Spacing="0">
-        <MudText Typo="Typo.overline">Data Strategy &amp; Delivery</MudText>
-        <MudText Typo="Typo.h4">Argo Portfolio</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">From direction to destination. One portfolio view connected to project work, dependencies, risks, issues, and decisions.</MudText>
-    </MudStack>
+<MudStack Row="true" Justify="Justify.FlexEnd" Class="mb-4">
     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddProjectDialog">Add project</MudButton>
 </MudStack>
 
@@ -31,16 +25,15 @@ else
                      OnEdit="OpenEditProjectDialog"
                      OnDelete="DeleteProjectAsync" />
 
-    @if (SelectedProject is not null)
-    {
-        <PortfolioDetail Project="SelectedProject"
-                          WorkItems="WorkItemsForSelectedProject"
-                          Activities="ActivitiesForSelectedProject"
-                          RaidItems="RaidItemsForSelectedProject"
-                          Users="users"
-                          OnAddWorkItem="() => OpenWorkItemDialog(null)"
-                          OnEditWorkItem="OpenWorkItemDialog" />
-    }
+    <MudMessageBox @ref="mudDeleteBox" CancelText="Cancel" Title="Warning">
+        <MessageContent>
+            You're about to permanently delete @SelectedProject?.Name.  Deleting can <b><i>not</i></b> be undone!
+        </MessageContent>
+        <YesButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteForever">Delete!</MudButton>
+        </YesButton>
+    </MudMessageBox>
+
 }
 
 @code {
@@ -51,6 +44,9 @@ else
     private List<RaidItemDTO> raidItems = [];
     private List<UserDTO> users = [];
     private string? selectedProjectId;
+    private IDialogReference? portfolioDetailDialog;
+
+    private MudMessageBox mudDeleteBox;
 
     private ProjectDTO? SelectedProject => projects.FirstOrDefault(p => p.Id == selectedProjectId);
 
@@ -94,9 +90,62 @@ else
         loading = false;
     }
 
-    private void SelectProject(string projectId)
+    private async Task SelectProject(string projectId)
     {
-        selectedProjectId = selectedProjectId == projectId ? null : projectId;
+        if (selectedProjectId == projectId)
+        {
+            selectedProjectId = null;
+            if (portfolioDetailDialog is not null)
+            {
+                portfolioDetailDialog.Close();
+                portfolioDetailDialog = null;
+            }
+            return;
+        }
+
+        selectedProjectId = projectId;
+        await OpenPortfolioDetailDialogAsync();
+    }
+
+    private async Task OpenPortfolioDetailDialogAsync()
+    {
+        if (SelectedProject is null)
+        {
+            return;
+        }
+
+        var parameters = new DialogParameters<PortfolioDetail>
+        {
+            { d => d.Project, SelectedProject },
+            { d => d.WorkItems, WorkItemsForSelectedProject },
+            { d => d.Activities, ActivitiesForSelectedProject },
+            { d => d.RaidItems, RaidItemsForSelectedProject },
+            { d => d.Users, users },
+            { d => d.OnAddWorkItem, EventCallback.Factory.Create(this, () => OpenWorkItemDialog(null)) },
+            { d => d.OnEditWorkItem, EventCallback.Factory.Create<WorkItemDTO>(this, workItem => OpenWorkItemDialog(workItem)) },
+            { d => d.OnEditProject, EventCallback.Factory.Create<ProjectDTO>(this, OpenEditProjectDialog) },
+            { d => d.OnDeleteProject, EventCallback.Factory.Create<ProjectDTO>(this, DeleteProjectAsync) },
+            { d => d.OnAddRaidItem, EventCallback.Factory.Create(this, ShowRaidComingSoon) }
+        };
+
+        var options = new DialogOptions
+        {
+            FullWidth = false,
+            MaxWidth = MaxWidth.False,
+            NoHeader = true,
+            CloseButton = false
+        };
+
+        portfolioDetailDialog = await DialogService.ShowAsync<PortfolioDetail>(SelectedProject.Name, parameters, options);
+        _ = await portfolioDetailDialog.Result;
+
+        selectedProjectId = null;
+        portfolioDetailDialog = null;
+    }
+
+    private void ShowRaidComingSoon()
+    {
+        Snackbar.Add("RAID record management is coming soon", Severity.Info);
     }
 
     private async Task OpenAddProjectDialog()
@@ -148,8 +197,9 @@ else
 
     private async Task DeleteProjectAsync(ProjectDTO project)
     {
-        var confirmed = await JsRuntime.InvokeAsync<bool>("confirm", $"Delete '{project.Name}'? This cannot be undone.");
-        if (!confirmed) return;
+        var confirmed = await mudDeleteBox.ShowAsync(new DialogOptions() { Position = DialogPosition.TopCenter });
+
+        if (confirmed != true) return;
 
         var deleted = await ArgoService.DeleteProject(project.Id);
         if (deleted.IsSuccess)

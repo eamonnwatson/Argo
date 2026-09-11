@@ -1,94 +1,156 @@
 @namespace Argo.WebApp.Components
 
-<MudPaper Class="pa-4 mt-4" Elevation="1">
-    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.h6">@Project.Name</MudText>
-        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="() => OnAddWorkItem.InvokeAsync()">Add work item</MudButton>
-    </MudStack>
-    <MudText Typo="Typo.body2" Class="mb-2">@Project.Objective</MudText>
-
-    <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Work items / waves</MudText>
-    @if (WorkItems.Count == 0)
-    {
-        <MudText Typo="Typo.body2" Color="Color.Secondary">No work items yet.</MudText>
-    }
-    else
-    {
-        <MudSimpleTable Dense="true" Hover="true">
-            <thead>
-                <tr>
-                    <th>Title</th>
-                    <th>Owner</th>
-                    <th>Status</th>
-                    <th>Due date</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in WorkItems)
+<MudContainer Fixed="true" Class="pa-0">
+    <MudPaper Class="detail-panel" Elevation="0">
+        <div class="detail-head">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+            <div>
+                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center" Class="mb-2">
+                    <span class="project-id" style="color:var(--brand-cyan);">@Project.Id</span>
+                    <MudChip T="string" Size="Size.Small" Color="@ProjectStatusColor(Project.Status)">@Project.Status</MudChip>
+                    <MudChip T="string" Size="Size.Small" Color="@PriorityColor(Project.Priority)">@Project.Priority priority</MudChip>
+                    <MudChip T="string" Size="Size.Small" Color="@HealthColor(Project.Health)">@Project.Health</MudChip>
+                </MudStack>
+                <MudText Typo="Typo.h5" Style="color:#fff;">@Project.Name</MudText>
+                @if (!string.IsNullOrWhiteSpace(Project.Objective))
                 {
-                    <tr>
-                        <td>@item.Title</td>
-                        <td>@item.Owner</td>
-                        <td><MudChip T="string" Size="Size.Small">@item.Status</MudChip></td>
-                        <td>@item.DueDate.ToString("d")</td>
-                        <td>
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => OnEditWorkItem.InvokeAsync(item)" />
-                        </td>
-                    </tr>
+                    <MudText Typo="Typo.body2" Class="objective">@Project.Objective</MudText>
                 }
-            </tbody>
-        </MudSimpleTable>
-    }
+            </div>
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Outlined" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Edit" OnClick="() => OnEditProject.InvokeAsync(Project)">Edit project</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" OnClick="() => OnDeleteProject.InvokeAsync(Project)">Delete project</MudButton>
+            </MudStack>
+        </MudStack>
 
-    <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Activities</MudText>
-    @if (Activities.Count == 0)
+        <div class="facts">
+            <div>
+                <div class="fact-label">Project owner</div>
+                <div class="fact-value">@Project.Owner</div>
+            </div>
+            <div>
+                <div class="fact-label">Next milestone</div>
+                <div class="fact-value">@(string.IsNullOrWhiteSpace(Project.NextMilestone) ? "—" : Project.NextMilestone)</div>
+            </div>
+            <div>
+                <div class="fact-label">Target date</div>
+                <div class="fact-value">@Project.TargetDate.ToString("MMM d, yyyy")</div>
+            </div>
+            <div>
+                <div class="fact-label">Waves completed</div>
+                <div class="fact-value">@WavesCompletedPercent% (@WavesDone/@WavesTotal)</div>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Project.SourceRequestId))
     {
-        <MudText Typo="Typo.body2" Color="Color.Secondary">No activities yet.</MudText>
-    }
-    else
-    {
-        <MudSimpleTable Dense="true" Hover="true">
-            <thead><tr><th>Title</th><th>Owner</th><th>Status</th><th>Due date</th></tr></thead>
-            <tbody>
-                @foreach (var a in Activities)
-                {
-                    <tr>
-                        <td>@a.Title</td>
-                        <td>@a.Owner</td>
-                        <td>@a.Status</td>
-                        <td>@a.DueDate.ToString("d")</td>
-                    </tr>
-                }
-            </tbody>
-        </MudSimpleTable>
+        <div class="intake-banner">
+            <span>Submitted request &middot; @Project.SourceRequestId</span>
+            <button class="edit-link" type="button" @onclick="ToggleIntakeDetails">
+                Original intake details @(intakeExpanded ? "−" : "+")
+            </button>
+        </div>
+        @if (intakeExpanded)
+        {
+            <div class="intake-details">@(string.IsNullOrWhiteSpace(Project.IntakeDetails) ? "No additional intake details." : Project.IntakeDetails)</div>
+        }
     }
 
-    <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">RAID</MudText>
-    @if (RaidItems.Count == 0)
-    {
-        <MudText Typo="Typo.body2" Color="Color.Secondary">No RAID items yet.</MudText>
-    }
-    else
-    {
-        <MudSimpleTable Dense="true" Hover="true">
-            <thead><tr><th>Type</th><th>Description</th><th>Owner</th><th>Due date</th></tr></thead>
-            <tbody>
-                @foreach (var r in RaidItems)
-                {
-                    <tr>
-                        <td>@r.Type</td>
-                        <td>@r.Description</td>
-                        <td>@r.Owner</td>
-                        <td>@r.DueDate.ToString("d")</td>
-                    </tr>
-                }
-            </tbody>
-        </MudSimpleTable>
-    }
-</MudPaper>
+    <MudGrid Class="pa-4">
+        <MudItem xs="12" md="7">
+            <div class="section-title">
+                <div>
+                    <MudText Typo="Typo.subtitle1">Work packages and waves</MudText>
+                    <MudText Typo="Typo.caption">Expand each item for participants, inputs, milestones, and completion criteria.</MudText>
+                </div>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="() => OnAddWorkItem.InvokeAsync()">Add wave</MudButton>
+            </div>
+
+            @if (WorkItems.Count == 0)
+            {
+                <div class="empty-hint">No work packages yet.</div>
+            }
+            else
+            {
+                <div class="work-list">
+                    @foreach (var item in WorkItems)
+                    {
+                        var expanded = expandedWorkItemIds.Contains(item.Id);
+                        var (done, total) = ActivityProgress(item.Id);
+                        <div class="@($"work-package {(expanded ? "expanded" : "")}")">
+                            <div class="work-summary">
+                                <button class="work-toggle" type="button" @onclick="() => ToggleWorkItem(item.Id)">
+                                    <span class="chevron">&rsaquo;</span>
+                                    <span>
+                                        <span class="work-title">@item.Title</span>
+                                        <span class="work-subtext">@item.Id &middot; @done/@total activities complete</span>
+                                    </span>
+                                </button>
+                                <div>
+                                    <div class="fact-label">Owner</div>
+                                    <div>@item.Owner</div>
+                                </div>
+                                <div>
+                                    <div class="fact-label">Status</div>
+                                    <MudChip T="string" Size="Size.Small" Color="@WorkStatusColor(item.Status)">@item.Status</MudChip>
+                                </div>
+                                <div>
+                                    <div class="fact-label">Due</div>
+                                    <div>@item.DueDate.ToString("MMM d, yyyy")</div>
+                                </div>
+                                <button class="edit-link" type="button" @onclick="() => OnEditWorkItem.InvokeAsync(item)">Edit</button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </MudItem>
+
+        <MudItem xs="12" md="5">
+            <div class="section-title">
+                <div>
+                    <MudText Typo="Typo.subtitle1">RAID and decisions</MudText>
+                    <MudText Typo="Typo.caption">What needs attention or leadership input.</MudText>
+                </div>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="() => OnAddRaidItem.InvokeAsync()">Add record</MudButton>
+            </div>
+
+            @if (RaidItems.Count == 0)
+            {
+                <div class="empty-hint">No RAID records yet.</div>
+            }
+            else
+            {
+                <div class="raid-list">
+                    @foreach (var r in RaidItems)
+                    {
+                        <div class="raid-card">
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@r.Type</MudChip>
+                            <div class="raid-copy">
+                                <strong>@r.Description</strong>
+                                <div class="raid-meta">
+                                    <span>@r.Owner</span>
+                                    <span>@r.DueDate.ToString("MMM d, yyyy")</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </MudItem>
+    </MudGrid>
+
+        <MudStack Row="true" Justify="Justify.FlexEnd" Class="pa-4 pt-0">
+            <MudButton Variant="Variant.Text" OnClick="CloseDialog">Close</MudButton>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
 
 @code {
+
+    [CascadingParameter] private IMudDialogInstance? MudDialog { get; set; }
     [Parameter, EditorRequired] public ProjectDTO Project { get; set; } = null!;
     [Parameter, EditorRequired] public List<WorkItemDTO> WorkItems { get; set; } = [];
     [Parameter, EditorRequired] public List<ActivityDTO> Activities { get; set; } = [];
@@ -96,4 +158,70 @@
     [Parameter, EditorRequired] public List<UserDTO> Users { get; set; } = [];
     [Parameter] public EventCallback OnAddWorkItem { get; set; }
     [Parameter] public EventCallback<WorkItemDTO> OnEditWorkItem { get; set; }
+    [Parameter] public EventCallback<ProjectDTO> OnEditProject { get; set; }
+    [Parameter] public EventCallback<ProjectDTO> OnDeleteProject { get; set; }
+    [Parameter] public EventCallback OnAddRaidItem { get; set; }
+
+    private readonly HashSet<string> expandedWorkItemIds = [];
+    private bool intakeExpanded;
+
+    private int WavesTotal => WorkItems.Count;
+    private int WavesDone => WorkItems.Count(w => w.Status == "Done");
+    private int WavesCompletedPercent => WavesTotal == 0 ? 0 : (int)Math.Round(100.0 * WavesDone / WavesTotal);
+
+    private void ToggleIntakeDetails() => intakeExpanded = !intakeExpanded;
+
+    private void ToggleWorkItem(string id)
+    {
+        if (!expandedWorkItemIds.Add(id))
+        {
+            expandedWorkItemIds.Remove(id);
+        }
+    }
+
+    private (int Done, int Total) ActivityProgress(string workItemId)
+    {
+        var forItem = Activities.Where(a => a.WorkItemId == workItemId).ToList();
+        return (forItem.Count(a => a.Status == "Done"), forItem.Count);
+    }
+
+    private static Color HealthColor(string health) => health switch
+    {
+        "On Track" => Color.Success,
+        "At Risk" => Color.Warning,
+        "Blocked" => Color.Error,
+        "Complete" => Color.Info,
+        "Not Assessed" => Color.Dark,
+        _ => Color.Default,
+    };
+
+    private static Color ProjectStatusColor(string status) => status switch
+    {
+        "Done" => Color.Success,
+        "In Progress" => Color.Warning,
+        "Blocked" => Color.Error,
+        "Waiting" => Color.Info,
+        _ => Color.Default,
+    };
+
+    private static Color PriorityColor(string priority) => priority switch
+    {
+        "Critical" => Color.Error,
+        "High" => Color.Error,
+        "Medium" => Color.Warning,
+        "Low" => Color.Default,
+        _ => Color.Default,
+    };
+
+    private static Color WorkStatusColor(string status) => status switch
+    {
+        "Done" => Color.Success,
+        "In Progress" => Color.Info,
+        "Blocked" => Color.Error,
+        "Waiting" => Color.Warning,
+        _ => Color.Default,
+    };
+
+    private void CloseDialog() => MudDialog?.Cancel();
+
 }
