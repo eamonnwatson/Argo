@@ -38,5 +38,12 @@ public static class ArgoTheme
         {
             DefaultBorderRadius = "8px",
         },
+        Typography = new Typography
+        {
+            Default = new DefaultTypography
+            {
+                FontFamily = ["Inter", "Aptos", "Segoe UI", "Arial", "sans-serif"],
+            },
+        },
     };
 }

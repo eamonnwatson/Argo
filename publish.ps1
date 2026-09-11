@@ -20,7 +20,7 @@ New-Item -ItemType Directory -Force -Path .\publish | Out-Null
 @{ date = $today; revision = $revision } | ConvertTo-Json | Set-Content $counterFile
 
 
-dotnet publish .\Argo.csproj `
+dotnet publish .\src\Argo.Web\Argo.Web.csproj `
     -c Release `
     -r win-x64 `
     -o .\publish\ `

@@ -6,21 +6,28 @@
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="1" Style="background:linear-gradient(105deg,#020611,#07122a 54%,#0b2444);">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@DrawerToggle" />
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="ml-2">
-            <MudImage Src="images/argo-constellation.png" Height="36" Width="64" ObjectFit="ObjectFit.Cover" Class="rounded" />
-            <MudStack Spacing="0">
-                <MudText Typo="Typo.caption" Class="text-uppercase">Data Strategy &amp; Delivery</MudText>
-                <MudText Typo="Typo.h6">Argo</MudText>
+    <MudAppBar Elevation="0" Class="hero-banner" Fixed="false" Style="height:auto; padding:18px 0;">
+        <div class="shell-row">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                <div class="constellation-mark">
+                    <MudImage Src="images/argo-constellation.png" ObjectFit="ObjectFit.Cover" Style="width:100%;height:100%;" />
+                </div>
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.caption" Class="hero-eyebrow">Data Strategy &amp; Delivery</MudText>
+                    <MudText Typo="Typo.h4">Argo Portfolio</MudText>
+                    <MudText Typo="Typo.body2" Class="hero-subtitle mt-1">From direction to destination. One portfolio view connected to project work, dependencies, risks, issues, and decisions.</MudText>
+                </MudStack>
             </MudStack>
-        </MudStack>
+            <MudStack Row="true" Spacing="4" AlignItems="AlignItems.Center" Class="hero-nav">
+                <MudLink Href="" Match="NavLinkMatch.All" Color="Color.Inherit" Underline="Underline.None">Portfolio</MudLink>
+                <MudLink Href="intake" Match="NavLinkMatch.Prefix" Color="Color.Inherit" Underline="Underline.None">Intake</MudLink>
+            </MudStack>
+        </div>
     </MudAppBar>
-    <MudDrawer id="nav-drawer" @bind-Open="drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
-        <NavMenu />
-    </MudDrawer>
-    <MudMainContent Class="pt-16 pa-4">
-        @Body
+    <MudMainContent Class="pa-4">
+        <MudContainer Fixed="true">
+            @Body
+        </MudContainer>
     </MudMainContent>
 </MudLayout>
 
@@ -29,15 +36,4 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">??</span>
 </div>
-
-@code {
-    private bool drawerOpen = true;
-
-    private void DrawerToggle()
-    {
-        drawerOpen = !drawerOpen;
-    }
-}
-
-
 
