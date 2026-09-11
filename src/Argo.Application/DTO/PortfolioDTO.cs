@@ -1,4 +1,4 @@
-﻿namespace Argo.DTO;
+﻿namespace Argo.Application.DTO;
 
 /// <summary>
 /// Represents the portfolio payload returned to populate the main dashboard views.

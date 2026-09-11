@@ -1,9 +1,9 @@
-using Argo.Application.Outbox;
+using Argo.Application.Notifications;
 using Argo.Domain.Events;
-using Argo.Notifications;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
-namespace Argo.Outbox;
+namespace Argo.Application.Outbox;
 
 /// <summary>
 /// Maps outbox message types to their corresponding domain event handlers. Unknown

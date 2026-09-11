@@ -1,4 +1,4 @@
-﻿namespace Argo.DTO;
+﻿namespace Argo.Application.DTO;
 
 /// <summary>
 /// Represents an intake submission envelope ingested from the upstream intake system.

@@ -1,4 +1,4 @@
-namespace Argo.DTO;
+namespace Argo.Application.DTO;
 
 /// <summary>
 /// Represents the mapping result between an intake request and a created project.

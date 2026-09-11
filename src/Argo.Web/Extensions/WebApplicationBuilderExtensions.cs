@@ -1,12 +1,13 @@
+using Argo.Application.Notifications;
+using Argo.Application.Outbox;
+using Argo.Application.Services;
 using Argo.Data;
 using Argo.Infrastructure.Email;
-using Argo.Notifications;
-using Argo.Outbox;
-using Argo.Services;
+using Argo.Web.Outbox;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.Authorization;
 
-namespace Argo.Extensions;
+namespace Argo.Web.Extensions;
 
 /// <summary>
 /// Provides startup extension methods that register Argo application services
@@ -59,24 +60,8 @@ public static class WebApplicationBuilderExtensions
         var emailOptions = builder.Configuration.GetSection("Email").Get<EmailOptions>() ?? new EmailOptions();
         builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 
-        builder.Services
-            .AddFluentEmail(emailOptions.FromAddress, emailOptions.FromName)
-            .AddSmtpSender(() =>
-            {
-                var smtpClient = new System.Net.Mail.SmtpClient(emailOptions.Host, emailOptions.Port)
-                {
-                    EnableSsl = emailOptions.UseSsl
-                };
+        builder.Services.AddArgoEmail(emailOptions);
 
-                if (!string.IsNullOrWhiteSpace(emailOptions.Username))
-                {
-                    smtpClient.Credentials = new System.Net.NetworkCredential(emailOptions.Username, emailOptions.Password);
-                }
-
-                return smtpClient;
-            });
-
-        builder.Services.AddScoped<IEmailSender, FluentEmailSender>();
         builder.Services.AddScoped<ProjectManagerChangedNotificationHandler>();
         builder.Services.AddScoped<IOutboxMessageDispatcher, OutboxMessageDispatcher>();
         builder.Services.AddHostedService<OutboxProcessor>();

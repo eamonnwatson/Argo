@@ -1,6 +1,6 @@
 ﻿using FluentResults;
 
-namespace Argo.Extensions;
+namespace Argo.Application.Common.Errors;
 
 /// <summary>
 /// Provides standardized <see cref="IError"/> instances used to map service-layer

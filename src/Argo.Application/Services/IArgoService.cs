@@ -1,8 +1,8 @@
-﻿using Argo.Domain.Entities;
-using Argo.DTO;
+﻿using Argo.Application.DTO;
+using Argo.Domain.Entities;
 using FluentResults;
 
-namespace Argo.Services;
+namespace Argo.Application.Services;
 
 /// <summary>
 /// Defines application services for managing projects, portfolio items, users,

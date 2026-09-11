@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 
-namespace Argo.Extensions;
+namespace Argo.Application.Extensions;
 
 /// <summary>
 /// Generates compact identifier values composed of an entity prefix and a random base-32 suffix.

@@ -1,13 +1,14 @@
+using Argo.Application.DTO;
+using Argo.Application.Common.Errors;
+using Argo.Application.Extensions;
 using Argo.Application.Repositories;
 using Argo.Domain.Entities;
 using Argo.Domain.Enums;
 using Argo.Domain.ValueObjects;
-using Argo.DTO;
-using Argo.Extensions;
 using FluentResults;
 using System.Text.Json;
 
-namespace Argo.Services;
+namespace Argo.Application.Services;
 
 /// <summary>
 /// Implements Argo application operations for project portfolio management,

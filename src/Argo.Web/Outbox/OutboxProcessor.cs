@@ -1,7 +1,7 @@
 using Argo.Application.Outbox;
 using Argo.Application.Repositories;
 
-namespace Argo.Outbox;
+namespace Argo.Web.Outbox;
 
 /// <summary>
 /// Background service that polls for pending outbox messages and dispatches them,

@@ -3,7 +3,7 @@ using Argo.Domain.ValueObjects;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
 
-namespace Argo.Extensions;
+namespace Argo.Web.Extensions;
 
 /// <summary>
 /// Represents the requirement that the current authenticated user must exist

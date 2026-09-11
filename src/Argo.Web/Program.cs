@@ -1,4 +1,4 @@
-using Argo.Extensions;
+using Argo.Web.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 

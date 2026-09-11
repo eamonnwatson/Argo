@@ -1,4 +1,4 @@
-namespace Argo.DTO;
+namespace Argo.Application.DTO;
 
 /// <summary>
 /// Represents the result returned by the intake ingestion endpoint.

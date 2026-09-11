@@ -1,4 +1,4 @@
-﻿namespace Argo.DTO;
+﻿namespace Argo.Application.DTO;
 
 /// <summary>
 /// Represents a project returned by portfolio APIs.

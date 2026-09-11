@@ -1,4 +1,4 @@
-using Argo.Notifications;
+using Argo.Application.Notifications;
 using FluentEmail.Core;
 
 namespace Argo.Infrastructure.Email;

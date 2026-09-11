@@ -1,6 +1,4 @@
-using Argo.Application.Outbox;
-
-namespace Argo.Outbox;
+namespace Argo.Application.Outbox;
 
 /// <summary>
 /// Dispatches a deserialized outbox message payload to the handler responsible for its type.

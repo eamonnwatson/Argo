@@ -1,8 +1,9 @@
 using Argo.Application.Repositories;
 using Argo.Domain.Enums;
 using Argo.Domain.Events;
+using Microsoft.Extensions.Logging;
 
-namespace Argo.Notifications;
+namespace Argo.Application.Notifications;
 
 /// <summary>
 /// Handles <see cref="ProjectManagerChanged"/> domain events by emailing the newly

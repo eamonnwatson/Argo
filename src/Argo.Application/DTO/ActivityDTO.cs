@@ -1,4 +1,4 @@
-﻿namespace Argo.DTO;
+﻿namespace Argo.Application.DTO;
 
 /// <summary>
 /// Represents an activity returned to clients for project execution tracking.

@@ -1,6 +1,6 @@
 ﻿using FluentResults;
 
-namespace Argo.Extensions;
+namespace Argo.Web.Extensions;
 
 /// <summary>
 /// Provides adapters between <see cref="Result"/> values and ASP.NET Core minimal API results.

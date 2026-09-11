@@ -1,9 +1,9 @@
+using Argo.Application.DTO;
+using Argo.Application.Services;
 using Argo.Domain.Entities;
 using Argo.Domain.Enums;
-using Argo.DTO;
-using Argo.Services;
 
-namespace Argo.Extensions;
+namespace Argo.Web.Extensions;
 
 /// <summary>
 /// Defines Argo minimal API endpoint mappings for portfolio, user, and intake operations.

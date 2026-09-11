@@ -1,4 +1,4 @@
-namespace Argo.Notifications;
+namespace Argo.Application.Notifications;
 
 /// <summary>
 /// Provides an abstraction for sending notification emails, decoupling handlers from

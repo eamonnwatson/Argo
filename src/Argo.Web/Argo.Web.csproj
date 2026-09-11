@@ -18,8 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentEmail.Core" />
-    <PackageReference Include="FluentEmail.Smtp" />
     <PackageReference Include="FluentResults" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
@@ -28,6 +26,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Argo.Domain\Argo.Domain.csproj" />
+    <ProjectReference Include="..\Argo.Application\Argo.Application.csproj" />
+    <ProjectReference Include="..\Argo.Infrastructure\Argo.Infrastructure.csproj" />
     <ProjectReference Include="..\Argo.Persistence\Argo.Persistence.csproj" />
   </ItemGroup>
 
