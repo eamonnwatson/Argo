@@ -1,0 +1,109 @@
+@namespace Argo.WebApp.Components
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="form" Model="model">
+            <MudTextField @bind-Value="model.Title" Label="Work package / wave name" Required="true" />
+            <MudSelect T="string" @bind-Value="model.Owner" Label="Owner" Required="true">
+                <MudSelectItem Value="@("Unassigned")">Unassigned</MudSelectItem>
+                @foreach (var user in Users)
+                {
+                    <MudSelectItem Value="@user.DisplayName">@user.DisplayName</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSelect T="string" @bind-Value="model.Status" Label="Status">
+                <MudSelectItem Value="@("Not Started")">Not Started</MudSelectItem>
+                <MudSelectItem Value="@("Waiting")">Waiting</MudSelectItem>
+                <MudSelectItem Value="@("In Progress")">In Progress</MudSelectItem>
+                <MudSelectItem Value="@("Blocked")">Blocked</MudSelectItem>
+                <MudSelectItem Value="@("Done")">Done</MudSelectItem>
+            </MudSelect>
+            <MudDatePicker @bind-Date="dueDate" Label="Due date" />
+            <MudTextField @bind-Value="model.Dependency" Label="Blocker or dependency" />
+            <MudTextField @bind-Value="model.Purpose" Label="Purpose / outcome" Lines="3" />
+            <MudTextField @bind-Value="model.Participants" Label="Participants" Lines="2" />
+            <MudTextField @bind-Value="model.RequiredInputs" Label="Required inputs" Lines="2" />
+            <MudTextField @bind-Value="model.Milestone" Label="Milestone" />
+            <MudTextField @bind-Value="model.DefinitionOfDone" Label="Definition of done" Lines="2" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">Save work item</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public List<UserDTO> Users { get; set; } = [];
+    [Parameter] public string ProjectId { get; set; } = string.Empty;
+    [Parameter] public WorkItemDTO? Existing { get; set; }
+
+    private MudForm form = null!;
+    private DateTime? dueDate = DateTime.Today;
+
+    private sealed class Model
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Owner { get; set; } = "Unassigned";
+        public string Status { get; set; } = "Not Started";
+        public string Dependency { get; set; } = string.Empty;
+        public string Purpose { get; set; } = string.Empty;
+        public string Participants { get; set; } = string.Empty;
+        public string RequiredInputs { get; set; } = string.Empty;
+        public string Milestone { get; set; } = string.Empty;
+        public string DefinitionOfDone { get; set; } = string.Empty;
+    }
+
+    private readonly Model model = new();
+
+    protected override void OnInitialized()
+    {
+        if (Existing is not null)
+        {
+            model.Title = Existing.Title;
+            model.Owner = Existing.Owner;
+            model.Status = Existing.Status;
+            model.Dependency = Existing.Dependency;
+            model.Purpose = Existing.Purpose;
+            model.Participants = Existing.Participants;
+            model.RequiredInputs = Existing.RequiredInputs;
+            model.Milestone = Existing.Milestone;
+            model.DefinitionOfDone = Existing.DefinitionOfDone;
+            dueDate = Existing.DueDate.ToDateTime(TimeOnly.MinValue);
+        }
+    }
+
+    private async Task Submit()
+    {
+        await form.ValidateAsync();
+        if (!form.IsValid) return;
+
+        var dueDateOnly = DateOnly.FromDateTime(dueDate ?? DateTime.Today);
+
+        if (Existing is null)
+        {
+            var dto = new WorkItemCreateDTO(ProjectId, model.Title, model.Owner, model.Status, dueDateOnly, model.Dependency, model.Purpose, model.Participants, model.RequiredInputs, model.Milestone, model.DefinitionOfDone);
+            MudDialog.Close(DialogResult.Ok(dto));
+        }
+        else
+        {
+            var dto = Existing with
+            {
+                Title = model.Title,
+                Owner = model.Owner,
+                Status = model.Status,
+                DueDate = dueDateOnly,
+                Dependency = model.Dependency,
+                Purpose = model.Purpose,
+                Participants = model.Participants,
+                RequiredInputs = model.RequiredInputs,
+                Milestone = model.Milestone,
+                DefinitionOfDone = model.DefinitionOfDone
+            };
+            MudDialog.Close(DialogResult.Ok(dto));
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

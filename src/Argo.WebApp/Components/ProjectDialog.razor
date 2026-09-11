@@ -1,0 +1,113 @@
+@namespace Argo.WebApp.Components
+@implements IDisposable
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="form" Model="model">
+            <MudTextField @bind-Value="model.Name" Label="Project name" Required="true" />
+            <MudSelect T="string" @bind-Value="model.Owner" Label="Project owner" Required="true">
+                <MudSelectItem Value="@("Unassigned")">Unassigned</MudSelectItem>
+                @foreach (var user in Users)
+                {
+                    <MudSelectItem Value="@user.DisplayName">@user.DisplayName</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSelect T="string" @bind-Value="model.Status" Label="Overall status">
+                <MudSelectItem Value="@("Waiting")">Waiting</MudSelectItem>
+                <MudSelectItem Value="@("In Progress")">In Progress</MudSelectItem>
+                <MudSelectItem Value="@("Done")">Done</MudSelectItem>
+            </MudSelect>
+            <MudSelect T="string" @bind-Value="model.Health" Label="Health">
+                <MudSelectItem Value="@("Not Assessed")">Not Assessed</MudSelectItem>
+                <MudSelectItem Value="@("On Track")">On Track</MudSelectItem>
+                <MudSelectItem Value="@("At Risk")">At Risk</MudSelectItem>
+                <MudSelectItem Value="@("Blocked")">Blocked</MudSelectItem>
+                <MudSelectItem Value="@("Complete")">Complete</MudSelectItem>
+            </MudSelect>
+            <MudSelect T="string" @bind-Value="model.Priority" Label="Waiting priority">
+                <MudSelectItem Value="@("Needs Triage")">Needs Triage</MudSelectItem>
+                <MudSelectItem Value="@("Critical")">Critical</MudSelectItem>
+                <MudSelectItem Value="@("High")">High</MudSelectItem>
+                <MudSelectItem Value="@("Medium")">Medium</MudSelectItem>
+                <MudSelectItem Value="@("Low")">Low</MudSelectItem>
+            </MudSelect>
+            <MudTextField @bind-Value="model.Objective" Label="Objective" Lines="3" />
+            <MudTextField @bind-Value="model.NextMilestone" Label="Next milestone" />
+            <MudDatePicker @bind-Date="targetDate" Label="Target date" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">Save project</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public List<UserDTO> Users { get; set; } = [];
+    [Parameter] public ProjectDTO? Existing { get; set; }
+
+    private MudForm form = null!;
+    private DateTime? targetDate = DateTime.Today;
+
+    private sealed class Model
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Owner { get; set; } = "Unassigned";
+        public string Status { get; set; } = "Waiting";
+        public string Health { get; set; } = "Not Assessed";
+        public string Priority { get; set; } = "Medium";
+        public string Objective { get; set; } = string.Empty;
+        public string NextMilestone { get; set; } = string.Empty;
+    }
+
+    private readonly Model model = new();
+
+    protected override void OnInitialized()
+    {
+        if (Existing is not null)
+        {
+            model.Name = Existing.Name;
+            model.Owner = Existing.Owner;
+            model.Status = Existing.Status;
+            model.Health = Existing.Health;
+            model.Priority = Existing.Priority;
+            model.Objective = Existing.Objective;
+            model.NextMilestone = Existing.NextMilestone;
+            targetDate = Existing.TargetDate.ToDateTime(TimeOnly.MinValue);
+        }
+    }
+
+    private async Task Submit()
+    {
+        await form.ValidateAsync();
+        if (!form.IsValid) return;
+
+        var targetDateOnly = DateOnly.FromDateTime(targetDate ?? DateTime.Today);
+
+        if (Existing is null)
+        {
+            var dto = new ProjectCreateDTO(model.Name, model.Owner, model.Status, model.Health, model.Priority, model.Objective, model.NextMilestone, targetDateOnly);
+            MudDialog.Close(DialogResult.Ok(dto));
+        }
+        else
+        {
+            var dto = Existing with
+            {
+                Name = model.Name,
+                Owner = model.Owner,
+                Status = model.Status,
+                Health = model.Health,
+                Priority = model.Priority,
+                Objective = model.Objective,
+                NextMilestone = model.NextMilestone,
+                TargetDate = targetDateOnly
+            };
+            MudDialog.Close(DialogResult.Ok(dto));
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    public void Dispose() { }
+}

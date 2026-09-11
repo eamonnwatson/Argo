@@ -1,0 +1,279 @@
+@page "/intake"
+@inject IArgoService ArgoService
+@inject ISnackbar Snackbar
+
+<PageTitle>Argo Intake</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-2">
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.overline">Data Strategy &amp; Delivery</MudText>
+        <MudText Typo="Typo.h4">Argo Intake</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">A guided front door for new projects, reporting work, data initiatives, and process improvements.</MudText>
+    </MudStack>
+    <MudStack Row="true" Spacing="2">
+        <MudChip T="string" Color="Color.Info">@requestId</MudChip>
+        <MudChip T="string" Color="@(saveStatus.Contains("saved") ? Color.Success : Color.Default)">@saveStatus</MudChip>
+    </MudStack>
+</MudStack>
+
+<MudAlert Severity="Severity.Info" Class="mb-4">
+    Submitting creates a request in the portfolio Waiting queue for team review. It does not mean the work is approved or scheduled.
+</MudAlert>
+
+<MudGrid>
+    <MudItem xs="12" md="3">
+        <MudPaper Class="pa-3" Elevation="1">
+            <MudText Typo="Typo.caption">Request completion</MudText>
+            <MudText Typo="Typo.caption" Class="float-right">Step @currentStep of @MaxStep</MudText>
+            <MudProgressLinear Value="@((double)currentStep / MaxStep * 100)" Color="Color.Primary" Class="my-2" />
+            <MudList T="int" SelectedValue="currentStep" SelectedValueChanged="GoToStep">
+                @foreach (var step in Steps)
+                {
+                    <MudListItem T="int" Value="step.Number">
+                        <MudText Typo="Typo.body2"><b>@step.Number.</b> @step.Name</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@step.Hint</MudText>
+                    </MudListItem>
+                }
+            </MudList>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="9">
+        <MudPaper Class="pa-4" Elevation="1">
+            @if (currentStep == 1)
+            {
+                <MudText Typo="Typo.h6" Class="mb-2">Who is requesting the work?</MudText>
+                <MudTextField @bind-Value="model.RequesterName" Label="Requester name" Required="true" />
+                <MudTextField @bind-Value="model.Department" Label="Department or team" Required="true" />
+                <MudTextField @bind-Value="model.RequesterContact" Label="Best contact method" Required="true" HelperText="Email or Teams name" />
+                <MudTextField @bind-Value="model.BusinessSponsor" Label="Business sponsor" Required="true" HelperText="Leader who supports the request and can help resolve priority or resource questions." />
+                <MudTextField @bind-Value="model.BusinessOwner" Label="Primary business owner" Required="true" HelperText="Person accountable for requirements, decisions, and acceptance." />
+                <MudTextField @bind-Value="model.AdditionalStakeholders" Label="Additional stakeholders" HelperText="Names, groups, or client contacts" />
+            }
+            else if (currentStep == 2)
+            {
+                <MudText Typo="Typo.h6" Class="mb-2">What is the need?</MudText>
+                <MudTextField @bind-Value="model.RequestTitle" Label="Request title" Required="true" />
+                <MudSelect T="string" @bind-Value="model.RequestType" Label="Request type" Required="true">
+                    <MudSelectItem Value="@("New project")">New project</MudSelectItem>
+                    <MudSelectItem Value="@("Reporting or dashboard request")">Reporting or dashboard request</MudSelectItem>
+                    <MudSelectItem Value="@("Data integration/source request")">Data integration/source request</MudSelectItem>
+                    <MudSelectItem Value="@("Process improvement")">Process improvement</MudSelectItem>
+                    <MudSelectItem Value="@("Other")">Other</MudSelectItem>
+                </MudSelect>
+                <MudTextField @bind-Value="model.RequestDescription" Label="Request description" Lines="3" Required="true" />
+                <MudTextField @bind-Value="model.BusinessProblem" Label="Business problem" Lines="3" Required="true" />
+                <MudTextField @bind-Value="model.DesiredOutcome" Label="Desired outcome" Lines="3" Required="true" />
+                <MudTextField @bind-Value="model.SuccessMeasures" Label="Success measures" Lines="2" />
+                <MudTextField @bind-Value="model.CurrentProcess" Label="Current process" Lines="2" />
+            }
+            else if (currentStep == 3)
+            {
+                <MudText Typo="Typo.h6" Class="mb-2">What is the impact?</MudText>
+                <MudTextField @bind-Value="model.AffectedGroups" Label="Affected teams or groups" Required="true" />
+                <MudTextField @bind-Value="model.ImpactScope" Label="Impact scope" />
+                <MudTextField @bind-Value="model.UsersAffected" Label="Users affected" />
+                <MudSelect T="string" @bind-Value="model.ClientImpact" Label="Client impact">
+                    <MudSelectItem Value="@("Yes")">Yes</MudSelectItem>
+                    <MudSelectItem Value="@("No")">No</MudSelectItem>
+                    <MudSelectItem Value="@("Unsure")">Unsure</MudSelectItem>
+                </MudSelect>
+                @if (model.ClientImpact == "Yes")
+                {
+                    <MudTextField @bind-Value="model.ClientNames" Label="Client names" />
+                }
+                <MudTextField @bind-Value="model.BusinessImpact" Label="Business impact" Lines="2" />
+                <MudTextField @bind-Value="model.StrategicAlignment" Label="Strategic alignment" Lines="2" />
+                <MudTextField @bind-Value="model.NoActionImpact" Label="Impact of no action" Lines="2" />
+                <MudTextField @bind-Value="model.DesiredDate" Label="Desired date" />
+                <MudSelect T="string" @bind-Value="model.DateType" Label="Date type">
+                    <MudSelectItem Value="@("Target")">Target</MudSelectItem>
+                    <MudSelectItem Value="@("Hard deadline")">Hard deadline</MudSelectItem>
+                </MudSelect>
+                <MudTextField @bind-Value="model.DateReason" Label="Reason for date" Lines="2" />
+            }
+            else if (currentStep == 4)
+            {
+                <MudText Typo="Typo.h6" Class="mb-2">Supporting details</MudText>
+                <MudTextField @bind-Value="model.InScope" Label="In scope" Lines="2" />
+                <MudTextField @bind-Value="model.OutOfScope" Label="Out of scope" Lines="2" />
+                <MudTextField @bind-Value="model.Dependencies" Label="Dependencies" Lines="2" />
+                <MudTextField @bind-Value="model.SystemsInvolved" Label="Systems involved" />
+                <MudTextField @bind-Value="model.DataSources" Label="Data sources" />
+                <MudSelect T="string" @bind-Value="model.SensitiveData" Label="Sensitive data involved?">
+                    <MudSelectItem Value="@("Yes")">Yes</MudSelectItem>
+                    <MudSelectItem Value="@("No")">No</MudSelectItem>
+                    <MudSelectItem Value="@("Unsure")">Unsure</MudSelectItem>
+                </MudSelect>
+                @if (model.SensitiveData is "Yes" or "Unsure")
+                {
+                    <MudTextField @bind-Value="model.SensitiveDetails" Label="Sensitive data details" Lines="2" />
+                }
+                <MudTextField @bind-Value="model.AccessNeeded" Label="Access needed" />
+                <MudTextField @bind-Value="model.TechnicalOwners" Label="Technical owners" />
+                <MudTextField @bind-Value="model.Vendors" Label="Vendors" />
+                <MudTextField @bind-Value="model.SupportingMaterials" Label="Supporting materials" Lines="2" />
+            }
+            else
+            {
+                <MudText Typo="Typo.h6" Class="mb-2">Review and submit</MudText>
+                <MudSimpleTable Dense="true">
+                    <tbody>
+                        <tr><td>Requester</td><td>@model.RequesterName (@model.Department)</td></tr>
+                        <tr><td>Business sponsor / owner</td><td>@model.BusinessSponsor / @model.BusinessOwner</td></tr>
+                        <tr><td>Request</td><td>@model.RequestTitle — @model.RequestType</td></tr>
+                        <tr><td>Desired outcome</td><td>@model.DesiredOutcome</td></tr>
+                        <tr><td>Affected groups</td><td>@model.AffectedGroups</td></tr>
+                        <tr><td>Desired date</td><td>@model.DesiredDate (@model.DateType)</td></tr>
+                    </tbody>
+                </MudSimpleTable>
+                <MudText Typo="Typo.body2" Class="mt-3">After submission: Completeness check → team triage → discovery → decision → approved project creation.</MudText>
+            }
+
+            <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+                <MudButton Disabled="@(currentStep == 1)" OnClick="() => GoToStep(currentStep - 1)">Back</MudButton>
+                <MudStack Row="true" Spacing="2">
+                    @if (currentStep < MaxStep)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => GoToStep(currentStep + 1)">Next</MudButton>
+                    }
+                    else
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveDraftAsync">Save draft</MudButton>
+                    }
+                </MudStack>
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private const int MaxStep = 5;
+    private int currentStep = 1;
+    private string requestId = "REQ-PENDING";
+    private string saveStatus = "New draft";
+    private readonly IntakeFormModel model = new();
+
+    private static readonly (int Number, string Name, string Hint)[] Steps =
+    [
+        (1, "People", "Requester and sponsor"),
+        (2, "Need", "Problem and outcome"),
+        (3, "Impact", "Scope and timing"),
+        (4, "Details", "Data and supporting info"),
+        (5, "Review", "Confirm and export"),
+    ];
+
+    protected override void OnInitialized()
+    {
+        requestId = "REQ-" + DateTime.Now.ToString("yyyyMMdd-HHmmss");
+    }
+
+    private void GoToStep(int step)
+    {
+        currentStep = Math.Clamp(step, 1, MaxStep);
+    }
+
+    private async Task SaveDraftAsync()
+    {
+        var request = new IntakeRequestDTO
+        {
+            RequestId = requestId,
+            RequesterName = model.RequesterName,
+            Department = model.Department,
+            RequesterContact = model.RequesterContact,
+            BusinessSponsor = model.BusinessSponsor,
+            BusinessOwner = model.BusinessOwner,
+            AdditionalStakeholders = model.AdditionalStakeholders,
+            RequestTitle = model.RequestTitle,
+            RequestType = model.RequestType,
+            RequestDescription = model.RequestDescription,
+            BusinessProblem = model.BusinessProblem,
+            DesiredOutcome = model.DesiredOutcome,
+            SuccessMeasures = model.SuccessMeasures,
+            CurrentProcess = model.CurrentProcess,
+            AffectedGroups = model.AffectedGroups,
+            ImpactScope = model.ImpactScope,
+            UsersAffected = model.UsersAffected,
+            ClientImpact = model.ClientImpact,
+            ClientNames = model.ClientNames,
+            BusinessImpact = model.BusinessImpact,
+            StrategicAlignment = model.StrategicAlignment,
+            NoActionImpact = model.NoActionImpact,
+            DesiredDate = model.DesiredDate,
+            DateType = model.DateType,
+            DateReason = model.DateReason,
+            InScope = model.InScope,
+            OutOfScope = model.OutOfScope,
+            Dependencies = model.Dependencies,
+            SystemsInvolved = model.SystemsInvolved,
+            DataSources = model.DataSources,
+            SensitiveData = model.SensitiveData,
+            SensitiveDetails = model.SensitiveDetails,
+            AccessNeeded = model.AccessNeeded,
+            TechnicalOwners = model.TechnicalOwners,
+            Vendors = model.Vendors,
+            SupportingMaterials = model.SupportingMaterials,
+        };
+
+        var dto = new IntakeSubmissionDTO
+        {
+            ArtifactType = "project-request-intake",
+            SchemaVersion = 1,
+            Status = "Draft",
+            RequestId = requestId,
+            UpdatedAt = DateTimeOffset.UtcNow,
+            SubmittedAt = DateTimeOffset.UtcNow,
+            Request = request,
+        };
+
+        var result = await ArgoService.SaveIntakeSubmission(dto);
+        if (result.IsSuccess)
+        {
+            saveStatus = "Draft saved";
+            Snackbar.Add("Draft saved", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add(string.Join("; ", result.Errors.Select(e => e.Message)), Severity.Error);
+        }
+    }
+
+    private sealed class IntakeFormModel
+    {
+        public string RequesterName { get; set; } = string.Empty;
+        public string Department { get; set; } = string.Empty;
+        public string RequesterContact { get; set; } = string.Empty;
+        public string BusinessSponsor { get; set; } = string.Empty;
+        public string BusinessOwner { get; set; } = string.Empty;
+        public string AdditionalStakeholders { get; set; } = string.Empty;
+        public string RequestTitle { get; set; } = string.Empty;
+        public string RequestType { get; set; } = "New project";
+        public string RequestDescription { get; set; } = string.Empty;
+        public string BusinessProblem { get; set; } = string.Empty;
+        public string DesiredOutcome { get; set; } = string.Empty;
+        public string SuccessMeasures { get; set; } = string.Empty;
+        public string CurrentProcess { get; set; } = string.Empty;
+        public string AffectedGroups { get; set; } = string.Empty;
+        public string ImpactScope { get; set; } = string.Empty;
+        public string UsersAffected { get; set; } = string.Empty;
+        public string ClientImpact { get; set; } = "No";
+        public string ClientNames { get; set; } = string.Empty;
+        public string BusinessImpact { get; set; } = string.Empty;
+        public string StrategicAlignment { get; set; } = string.Empty;
+        public string NoActionImpact { get; set; } = string.Empty;
+        public string DesiredDate { get; set; } = string.Empty;
+        public string DateType { get; set; } = "Target";
+        public string DateReason { get; set; } = string.Empty;
+        public string InScope { get; set; } = string.Empty;
+        public string OutOfScope { get; set; } = string.Empty;
+        public string Dependencies { get; set; } = string.Empty;
+        public string SystemsInvolved { get; set; } = string.Empty;
+        public string DataSources { get; set; } = string.Empty;
+        public string SensitiveData { get; set; } = "No";
+        public string SensitiveDetails { get; set; } = string.Empty;
+        public string AccessNeeded { get; set; } = string.Empty;
+        public string TechnicalOwners { get; set; } = string.Empty;
+        public string Vendors { get; set; } = string.Empty;
+        public string SupportingMaterials { get; set; } = string.Empty;
+    }
+}

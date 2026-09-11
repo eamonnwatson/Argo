@@ -1,0 +1,54 @@
+@namespace Argo.WebApp.Components
+
+<MudPaper Class="@($"pa-4 mb-4 {Class}")" Elevation="1">
+    <MudText Typo="Typo.h6" Class="mb-2">Team workload</MudText>
+    <MudSimpleTable Dense="true" Hover="true">
+        <thead>
+            <tr>
+                <th>Owner</th>
+                <th>Projects</th>
+                <th>On track</th>
+                <th>At risk / blocked</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var group in Workload)
+            {
+                <tr>
+                    <td>@group.Owner</td>
+                    <td>@group.Total</td>
+                    <td>@group.OnTrack</td>
+                    <td>
+                        @if (group.AtRisk > 0)
+                        {
+                            <MudChip T="string" Color="Color.Error" Size="Size.Small">@group.AtRisk</MudChip>
+                        }
+                        else
+                        {
+                            <span>0</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </MudSimpleTable>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired] public List<ProjectDTO> Projects { get; set; } = [];
+    [Parameter, EditorRequired] public List<UserDTO> Users { get; set; } = [];
+    [Parameter] public string Class { get; set; } = string.Empty;
+
+    private record OwnerWorkload(string Owner, int Total, int OnTrack, int AtRisk);
+
+    private List<OwnerWorkload> Workload =>
+        Projects
+            .GroupBy(p => p.Owner)
+            .Select(g => new OwnerWorkload(
+                g.Key,
+                g.Count(),
+                g.Count(p => p.Health == "On Track" || p.Health == "Complete"),
+                g.Count(p => p.Health is "At Risk" or "Blocked")))
+            .OrderByDescending(g => g.Total)
+            .ToList();
+}

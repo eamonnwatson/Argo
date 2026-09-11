@@ -1,3 +1,5 @@
+using Argo.Application.Services;
+using Argo.Data;
 using Argo.WebApp.Components;
 using MudBlazor.Services;
 
@@ -10,7 +12,17 @@ builder.Services.AddMudServices();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Direct in-process access to Argo application/persistence services (no HTTP hop to Argo.Web).
+// Authentication is intentionally not wired up here; see plan follow-up task.
+var dbPath = builder.Configuration.GetConnectionString("ArgoDb") ?? Path.Combine(AppContext.BaseDirectory, "argo.db");
+builder.Services.AddArgoPersistence($"Data Source={dbPath}");
+builder.Services.AddTransient<IArgoService, ArgoService>();
+
 var app = builder.Build();
+
+// The database is initialized during startup so the app can run without a separate
+// migration/bootstrap step for the SQLite store.
+app.Services.InitializeArgoDatabase();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

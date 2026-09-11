@@ -1,0 +1,64 @@
+@namespace Argo.WebApp.Components
+
+<MudGrid>
+    @foreach (var status in Statuses)
+    {
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-3" Elevation="0" Style="background:#f3f6fa;">
+                <MudText Typo="Typo.subtitle1" Class="mb-2">@status (@Projects.Count(p => p.Status == status))</MudText>
+                @foreach (var project in Projects.Where(p => p.Status == status).OrderByDescending(p => PriorityRank(p.Priority)))
+                {
+                    <MudCard Class="mb-2" Outlined="true"
+                             Style="@(project.Id == SelectedProjectId ? "border-color:#67e0d1;" : "")">
+                        <MudCardContent Class="pb-1" @onclick="() => OnSelect.InvokeAsync(project.Id)" Style="cursor:pointer;">
+                            <MudText Typo="Typo.subtitle2">@project.Name</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@project.Owner</MudText>
+                            <MudStack Row="true" Spacing="1" Class="mt-1">
+                                <MudChip T="string" Size="Size.Small" Color="@HealthColor(project.Health)">@project.Health</MudChip>
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@project.Priority</MudChip>
+                            </MudStack>
+                            @if (!string.IsNullOrWhiteSpace(project.NextMilestone))
+                            {
+                                <MudText Typo="Typo.caption" Class="mt-1">Next: @project.NextMilestone</MudText>
+                            }
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => OnEdit.InvokeAsync(project)" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => OnDelete.InvokeAsync(project)" />
+                        </MudCardActions>
+                    </MudCard>
+                }
+            </MudPaper>
+        </MudItem>
+    }
+</MudGrid>
+
+@code {
+    [Parameter, EditorRequired] public List<ProjectDTO> Projects { get; set; } = [];
+    [Parameter] public string? SelectedProjectId { get; set; }
+    [Parameter] public EventCallback<string> OnSelect { get; set; }
+    [Parameter] public EventCallback<ProjectDTO> OnEdit { get; set; }
+    [Parameter] public EventCallback<ProjectDTO> OnDelete { get; set; }
+
+    private static readonly string[] Statuses = ["Waiting", "In Progress", "Done"];
+
+    private static readonly Dictionary<string, int> PriorityRanks = new()
+    {
+        ["Needs Triage"] = 5,
+        ["Critical"] = 4,
+        ["High"] = 3,
+        ["Medium"] = 2,
+        ["Low"] = 1,
+    };
+
+    private static int PriorityRank(string priority) => PriorityRanks.GetValueOrDefault(priority, 0);
+
+    private static Color HealthColor(string health) => health switch
+    {
+        "On Track" => Color.Success,
+        "At Risk" => Color.Warning,
+        "Blocked" => Color.Error,
+        "Complete" => Color.Info,
+        _ => Color.Default,
+    };
+}

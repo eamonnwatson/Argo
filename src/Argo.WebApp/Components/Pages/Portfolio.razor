@@ -1,0 +1,204 @@
+@page "/"
+@inject IArgoService ArgoService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JsRuntime
+
+<PageTitle>Argo Portfolio</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.overline">Data Strategy &amp; Delivery</MudText>
+        <MudText Typo="Typo.h4">Argo Portfolio</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">From direction to destination. One portfolio view connected to project work, dependencies, risks, issues, and decisions.</MudText>
+    </MudStack>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAddProjectDialog">Add project</MudButton>
+</MudStack>
+
+@if (loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+}
+else
+{
+    <PortfolioSummary Projects="projects" WorkItems="workItems" RaidItems="raidItems" />
+
+    <TeamWorkloadChart Projects="projects" Users="users" Class="my-4" />
+
+    <PortfolioBoard Projects="projects"
+                     SelectedProjectId="selectedProjectId"
+                     OnSelect="SelectProject"
+                     OnEdit="OpenEditProjectDialog"
+                     OnDelete="DeleteProjectAsync" />
+
+    @if (SelectedProject is not null)
+    {
+        <PortfolioDetail Project="SelectedProject"
+                          WorkItems="WorkItemsForSelectedProject"
+                          Activities="ActivitiesForSelectedProject"
+                          RaidItems="RaidItemsForSelectedProject"
+                          Users="users"
+                          OnAddWorkItem="() => OpenWorkItemDialog(null)"
+                          OnEditWorkItem="OpenWorkItemDialog" />
+    }
+}
+
+@code {
+    private bool loading = true;
+    private List<ProjectDTO> projects = [];
+    private List<WorkItemDTO> workItems = [];
+    private List<ActivityDTO> activities = [];
+    private List<RaidItemDTO> raidItems = [];
+    private List<UserDTO> users = [];
+    private string? selectedProjectId;
+
+    private ProjectDTO? SelectedProject => projects.FirstOrDefault(p => p.Id == selectedProjectId);
+
+    private List<WorkItemDTO> WorkItemsForSelectedProject =>
+        workItems.Where(w => w.ProjectId == selectedProjectId).ToList();
+
+    private List<ActivityDTO> ActivitiesForSelectedProject =>
+        activities.Where(a => a.ProjectId == selectedProjectId).ToList();
+
+    private List<RaidItemDTO> RaidItemsForSelectedProject =>
+        raidItems.Where(r => r.ProjectId == selectedProjectId).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        loading = true;
+        var projectsResult = await ArgoService.GetProjectsAsync();
+        if (projectsResult.IsSuccess)
+        {
+            var portfolio = PortfolioMapper.MapProjects(projectsResult.Value);
+            projects = portfolio.Projects.ToList();
+            workItems = portfolio.WorkItems.ToList();
+            activities = portfolio.Activities.ToList();
+            raidItems = portfolio.RaidItems.ToList();
+        }
+        else
+        {
+            Snackbar.Add(string.Join("; ", projectsResult.Errors.Select(e => e.Message)), Severity.Error);
+        }
+
+        var usersResult = await ArgoService.GetUsersAsync();
+        if (usersResult.IsSuccess)
+        {
+            users = usersResult.Value.Select(u => new UserDTO(u.Id.Value, u.DisplayName, u.IsProjectManager)).ToList();
+        }
+
+        loading = false;
+    }
+
+    private void SelectProject(string projectId)
+    {
+        selectedProjectId = selectedProjectId == projectId ? null : projectId;
+    }
+
+    private async Task OpenAddProjectDialog()
+    {
+        var parameters = new DialogParameters<ProjectDialog>
+        {
+            { d => d.Users, users }
+        };
+        var dialog = await DialogService.ShowAsync<ProjectDialog>("Add project", parameters);
+        var result = await dialog.Result;
+        if (result is { Canceled: false, Data: ProjectCreateDTO createDto })
+        {
+            var created = await ArgoService.CreateProject(createDto);
+            if (created.IsSuccess)
+            {
+                Snackbar.Add("Project created", Severity.Success);
+                await LoadDataAsync();
+            }
+            else
+            {
+                Snackbar.Add(string.Join("; ", created.Errors.Select(e => e.Message)), Severity.Error);
+            }
+        }
+    }
+
+    private async Task OpenEditProjectDialog(ProjectDTO project)
+    {
+        var parameters = new DialogParameters<ProjectDialog>
+        {
+            { d => d.Users, users },
+            { d => d.Existing, project }
+        };
+        var dialog = await DialogService.ShowAsync<ProjectDialog>("Edit project", parameters);
+        var result = await dialog.Result;
+        if (result is { Canceled: false, Data: ProjectDTO updated })
+        {
+            var saved = await ArgoService.UpdateProject(project.Id, updated);
+            if (saved.IsSuccess)
+            {
+                Snackbar.Add("Project saved", Severity.Success);
+                await LoadDataAsync();
+            }
+            else
+            {
+                Snackbar.Add(string.Join("; ", saved.Errors.Select(e => e.Message)), Severity.Error);
+            }
+        }
+    }
+
+    private async Task DeleteProjectAsync(ProjectDTO project)
+    {
+        var confirmed = await JsRuntime.InvokeAsync<bool>("confirm", $"Delete '{project.Name}'? This cannot be undone.");
+        if (!confirmed) return;
+
+        var deleted = await ArgoService.DeleteProject(project.Id);
+        if (deleted.IsSuccess)
+        {
+            Snackbar.Add("Project deleted", Severity.Success);
+            if (selectedProjectId == project.Id) selectedProjectId = null;
+            await LoadDataAsync();
+        }
+        else
+        {
+            Snackbar.Add(string.Join("; ", deleted.Errors.Select(e => e.Message)), Severity.Error);
+        }
+    }
+
+    private async Task OpenWorkItemDialog(WorkItemDTO? existing)
+    {
+        if (SelectedProject is null) return;
+
+        var parameters = new DialogParameters<WorkItemDialog>
+        {
+            { d => d.Users, users },
+            { d => d.ProjectId, SelectedProject.Id },
+            { d => d.Existing, existing }
+        };
+        var dialog = await DialogService.ShowAsync<WorkItemDialog>(existing is null ? "Work package or wave" : "Edit work item", parameters);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            if (result.Data is WorkItemCreateDTO createDto)
+            {
+                var created = await ArgoService.CreateWorkItem(createDto);
+                if (created.IsFailed)
+                {
+                    Snackbar.Add(string.Join("; ", created.Errors.Select(e => e.Message)), Severity.Error);
+                    return;
+                }
+            }
+            else if (result.Data is WorkItemDTO updateDto)
+            {
+                var updated = await ArgoService.UpdateWorkItem(updateDto.Id, updateDto);
+                if (updated.IsFailed)
+                {
+                    Snackbar.Add(string.Join("; ", updated.Errors.Select(e => e.Message)), Severity.Error);
+                    return;
+                }
+            }
+
+            Snackbar.Add("Work item saved", Severity.Success);
+            await LoadDataAsync();
+        }
+    }
+}

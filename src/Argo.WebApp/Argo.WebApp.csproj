@@ -11,4 +11,10 @@
   <ItemGroup>
     <PackageReference Include="MudBlazor" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Argo.Domain\Argo.Domain.csproj" />
+    <ProjectReference Include="..\Argo.Application\Argo.Application.csproj" />
+    <ProjectReference Include="..\Argo.Persistence\Argo.Persistence.csproj" />
+  </ItemGroup>
 </Project>

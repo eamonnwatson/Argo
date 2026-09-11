@@ -1,0 +1,99 @@
+@namespace Argo.WebApp.Components
+
+<MudPaper Class="pa-4 mt-4" Elevation="1">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h6">@Project.Name</MudText>
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="() => OnAddWorkItem.InvokeAsync()">Add work item</MudButton>
+    </MudStack>
+    <MudText Typo="Typo.body2" Class="mb-2">@Project.Objective</MudText>
+
+    <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Work items / waves</MudText>
+    @if (WorkItems.Count == 0)
+    {
+        <MudText Typo="Typo.body2" Color="Color.Secondary">No work items yet.</MudText>
+    }
+    else
+    {
+        <MudSimpleTable Dense="true" Hover="true">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Owner</th>
+                    <th>Status</th>
+                    <th>Due date</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in WorkItems)
+                {
+                    <tr>
+                        <td>@item.Title</td>
+                        <td>@item.Owner</td>
+                        <td><MudChip T="string" Size="Size.Small">@item.Status</MudChip></td>
+                        <td>@item.DueDate.ToString("d")</td>
+                        <td>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => OnEditWorkItem.InvokeAsync(item)" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    }
+
+    <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Activities</MudText>
+    @if (Activities.Count == 0)
+    {
+        <MudText Typo="Typo.body2" Color="Color.Secondary">No activities yet.</MudText>
+    }
+    else
+    {
+        <MudSimpleTable Dense="true" Hover="true">
+            <thead><tr><th>Title</th><th>Owner</th><th>Status</th><th>Due date</th></tr></thead>
+            <tbody>
+                @foreach (var a in Activities)
+                {
+                    <tr>
+                        <td>@a.Title</td>
+                        <td>@a.Owner</td>
+                        <td>@a.Status</td>
+                        <td>@a.DueDate.ToString("d")</td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    }
+
+    <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">RAID</MudText>
+    @if (RaidItems.Count == 0)
+    {
+        <MudText Typo="Typo.body2" Color="Color.Secondary">No RAID items yet.</MudText>
+    }
+    else
+    {
+        <MudSimpleTable Dense="true" Hover="true">
+            <thead><tr><th>Type</th><th>Description</th><th>Owner</th><th>Due date</th></tr></thead>
+            <tbody>
+                @foreach (var r in RaidItems)
+                {
+                    <tr>
+                        <td>@r.Type</td>
+                        <td>@r.Description</td>
+                        <td>@r.Owner</td>
+                        <td>@r.DueDate.ToString("d")</td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    }
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired] public ProjectDTO Project { get; set; } = null!;
+    [Parameter, EditorRequired] public List<WorkItemDTO> WorkItems { get; set; } = [];
+    [Parameter, EditorRequired] public List<ActivityDTO> Activities { get; set; } = [];
+    [Parameter, EditorRequired] public List<RaidItemDTO> RaidItems { get; set; } = [];
+    [Parameter, EditorRequired] public List<UserDTO> Users { get; set; } = [];
+    [Parameter] public EventCallback OnAddWorkItem { get; set; }
+    [Parameter] public EventCallback<WorkItemDTO> OnEditWorkItem { get; set; }
+}
