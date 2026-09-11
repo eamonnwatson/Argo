@@ -27,7 +27,8 @@ internal class ProjectConfiguration : IEntityTypeConfiguration<Project>
         builder.Property(p => p.OwnerId)
             .HasConversion(
                 ownerId => ownerId.HasValue ? ownerId.Value.Value : null,
-                value => value == null ? (UserId?)null : UserId.FromTrustedValue(value));
+                value => value == null ? (UserId?)null : UserId.FromTrustedValue(value))
+            .UseCollation("NOCASE");
 
         builder.HasOne(p => p.Owner)
             .WithMany()

@@ -21,5 +21,9 @@ public readonly record struct UserId
 
     public static UserId FromTrustedValue(string value) => new(value);
 
+    public bool Equals(UserId other) => StringComparer.OrdinalIgnoreCase.Equals(Value, other.Value);
+
+    public override int GetHashCode() => StringComparer.OrdinalIgnoreCase.GetHashCode(Value);
+
     public override string ToString() => Value;
 }

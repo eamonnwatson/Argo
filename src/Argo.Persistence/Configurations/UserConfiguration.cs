@@ -16,6 +16,7 @@ internal class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.Id)
             .HasConversion(id => id.Value, value => UserId.FromTrustedValue(value))
+            .UseCollation("NOCASE")
             .HasColumnName("DomainID")
             .ValueGeneratedNever();
 
