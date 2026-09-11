@@ -1,10 +1,12 @@
 <Solution>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
+    <File Path="Directory.Packages.props" />
   </Folder>
   <Project Path="src/Argo.Application/Argo.Application.csproj" Id="8f04f3df-064d-4b38-9f13-75ca58c6db80" />
   <Project Path="src/Argo.Domain/Argo.Domain.csproj" />
   <Project Path="src/Argo.Infrastructure/Argo.Infrastructure.csproj" />
   <Project Path="src/Argo.Persistence/Argo.Persistence.csproj" />
   <Project Path="src/Argo.Web/Argo.Web.csproj" />
+  <Project Path="src/Argo.WebApp/Argo.WebApp.csproj" Id="f3fc3ee7-7d05-4096-a1e3-ce1c8ae6bb8a" />
 </Solution>
