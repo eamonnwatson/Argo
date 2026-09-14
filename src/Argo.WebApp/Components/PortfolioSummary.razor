@@ -5,7 +5,7 @@
         <MudPaper Class="pa-4 stat-card" Elevation="0">
             <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                 <MudText Typo="Typo.body2" Class="stat-label">Waiting</MudText>
-                <MudText Typo="Typo.h5" Class="stat-value">@Projects.Count(p => p.Status == "Waiting")</MudText>
+                <MudText Typo="Typo.h5" Class="stat-value">@CountWaiting</MudText>
             </MudStack>
         </MudPaper>
     </MudItem>
@@ -13,7 +13,7 @@
         <MudPaper Class="pa-4 stat-card" Elevation="0">
             <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                 <MudText Typo="Typo.body2" Class="stat-label">In progress</MudText>
-                <MudText Typo="Typo.h5" Class="stat-value">@Projects.Count(p => p.Status == "In Progress")</MudText>
+                <MudText Typo="Typo.h5" Class="stat-value">@CountInProgress</MudText>
             </MudStack>
         </MudPaper>
     </MudItem>
@@ -21,14 +21,14 @@
         <MudPaper Class="pa-4 stat-card" Elevation="0">
             <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                 <MudText Typo="Typo.body2" Class="stat-label">Done</MudText>
-                <MudText Typo="Typo.h5" Class="stat-value">@Projects.Count(p => p.Status == "Done")</MudText>
+                <MudText Typo="Typo.h5" Class="stat-value">@CountDone</MudText>
             </MudStack>
         </MudPaper>
     </MudItem>
 </MudGrid>
 
 @code {
-    [Parameter, EditorRequired] public List<ProjectDTO> Projects { get; set; } = [];
-    [Parameter, EditorRequired] public List<WorkItemDTO> WorkItems { get; set; } = [];
-    [Parameter, EditorRequired] public List<RaidItemDTO> RaidItems { get; set; } = [];
+    [Parameter] public int CountWaiting { get; set; } = 0;
+    [Parameter] public int CountInProgress { get; set; } = 0;
+    [Parameter] public int CountDone { get; set; } = 0;
 }
