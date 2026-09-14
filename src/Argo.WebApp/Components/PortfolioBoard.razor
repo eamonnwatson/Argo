@@ -46,7 +46,7 @@
 </div>
 
 @code {
-    [Parameter, EditorRequired] public List<ProjectDTO> Projects { get; set; } = [];
+    [Parameter] public List<ProjectDTO> Projects { get; set; } = [];
     [Parameter] public string? SelectedProjectId { get; set; }
     [Parameter] public EventCallback<string> OnSelect { get; set; }
     [Parameter] public EventCallback<ProjectDTO> OnEdit { get; set; }

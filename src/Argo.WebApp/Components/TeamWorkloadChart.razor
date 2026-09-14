@@ -1,6 +1,6 @@
 @namespace Argo.WebApp.Components
 
-<MudPaper Class="@($"pa-4 mb-4 {Class}")" Elevation="0" Style="box-shadow:var(--shadow);">
+<MudPaper Class="pa-4 mb-4 my-4" Elevation="0" Style="box-shadow:var(--shadow);">
     <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start" Class="mb-3">
         <div>
             <MudText Typo="Typo.h6">Team workload &amp; project health</MudText>
@@ -35,9 +35,8 @@
 </MudPaper>
 
 @code {
-    [Parameter, EditorRequired] public List<ProjectDTO> Projects { get; set; } = [];
-    [Parameter, EditorRequired] public List<UserDTO> Users { get; set; } = [];
-    [Parameter] public string Class { get; set; } = string.Empty;
+    [Parameter] public List<ProjectDTO> Projects { get; set; } = [];
+    [Parameter] public List<UserDTO> Users { get; set; } = [];
 
     private static readonly string[] Categories = ["Waiting", "In-Progress", "At-Risk", "Blocked", "Done"];
 
@@ -47,21 +46,17 @@
     private static string Categorize(ProjectDTO project)
     {
         if (project.Health == "Blocked")
-        {
             return "Blocked";
-        }
+
         if (project.Health == "At Risk")
-        {
             return "At-Risk";
-        }
+
         if (project.Status == "Done")
-        {
             return "Done";
-        }
+
         if (project.Status == "In Progress")
-        {
             return "In-Progress";
-        }
+
         return "Waiting";
     }
 
