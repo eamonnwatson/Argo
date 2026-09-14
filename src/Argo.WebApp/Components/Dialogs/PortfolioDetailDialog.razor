@@ -1,4 +1,5 @@
 @namespace Argo.WebApp.Components
+@using Argo.WebApp.Components.Dialogs
 
 <MudContainer Fixed="true" Class="pa-0">
     <MudPaper Class="detail-panel" Elevation="0">
@@ -18,8 +19,8 @@
                 }
             </div>
             <MudStack Row="true" Spacing="2">
-                <MudButton Variant="Variant.Outlined" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Edit" OnClick="() => OnEditProject.InvokeAsync(Project)">Edit project</MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" OnClick="() => OnDeleteProject.InvokeAsync(Project)">Delete project</MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Edit" OnClick="EditProject">Edit project</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete">Delete project</MudButton>
             </MudStack>
         </MudStack>
 
@@ -64,7 +65,7 @@
                     <MudText Typo="Typo.subtitle1">Work packages and waves</MudText>
                     <MudText Typo="Typo.caption">Expand each item for participants, inputs, milestones, and completion criteria.</MudText>
                 </div>
-                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="() => OnAddWorkItem.InvokeAsync()">Add wave</MudButton>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add">Add wave</MudButton>
             </div>
 
             @if (WorkItems.Count == 0)
@@ -99,7 +100,7 @@
                                     <div class="fact-label">Due</div>
                                     <div>@item.DueDate.ToString("MMM d, yyyy")</div>
                                 </div>
-                                <button class="edit-link" type="button" @onclick="() => OnEditWorkItem.InvokeAsync(item)">Edit</button>
+                                <button class="edit-link" type="button" @onclick="">Edit</button>
                             </div>
                         </div>
                     }
@@ -113,7 +114,7 @@
                     <MudText Typo="Typo.subtitle1">RAID and decisions</MudText>
                     <MudText Typo="Typo.caption">What needs attention or leadership input.</MudText>
                 </div>
-                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="() => OnAddRaidItem.InvokeAsync()">Add record</MudButton>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add">Add record</MudButton>
             </div>
 
             @if (RaidItems.Count == 0)
@@ -150,17 +151,17 @@
 
 @code {
 
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private IArgoService ArgoService { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
     [CascadingParameter] private IMudDialogInstance? MudDialog { get; set; }
-    [Parameter, EditorRequired] public ProjectDTO Project { get; set; } = null!;
-    [Parameter, EditorRequired] public List<WorkItemDTO> WorkItems { get; set; } = [];
-    [Parameter, EditorRequired] public List<ActivityDTO> Activities { get; set; } = [];
-    [Parameter, EditorRequired] public List<RaidItemDTO> RaidItems { get; set; } = [];
-    [Parameter, EditorRequired] public List<UserDTO> Users { get; set; } = [];
-    [Parameter] public EventCallback OnAddWorkItem { get; set; }
-    [Parameter] public EventCallback<WorkItemDTO> OnEditWorkItem { get; set; }
-    [Parameter] public EventCallback<ProjectDTO> OnEditProject { get; set; }
-    [Parameter] public EventCallback<ProjectDTO> OnDeleteProject { get; set; }
-    [Parameter] public EventCallback OnAddRaidItem { get; set; }
+
+    [Parameter] public ProjectDTO Project { get; set; } = null!;
+    [Parameter] public List<WorkItemDTO> WorkItems { get; set; } = [];
+    [Parameter] public List<ActivityDTO> Activities { get; set; } = [];
+    [Parameter] public List<RaidItemDTO> RaidItems { get; set; } = [];
+    [Parameter] public List<UserDTO> Users { get; set; } = [];
 
     private readonly HashSet<string> expandedWorkItemIds = [];
     private bool intakeExpanded;
@@ -224,4 +225,30 @@
 
     private void CloseDialog() => MudDialog?.Cancel();
 
+    private async Task EditProject()
+    {
+        var parameters = new DialogParameters<ProjectEditDialog>
+        {
+            { d => d.Users, Users },
+            { d => d.Project, Project }
+        };
+
+        var dialog = await DialogService.ShowAsync<ProjectEditDialog>(parameters);
+        var dialogResult = await dialog.Result;
+
+        if (dialogResult is { Canceled: false, Data: ProjectDTO updatedProject })
+        {
+            var saved = await ArgoService.UpdateProject(updatedProject.Id, updatedProject);
+            if (saved.IsSuccess)
+            {
+                Snackbar.Add("Project saved", Severity.Success);
+                Project = updatedProject;
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add(string.Join("; ", saved.Errors.Select(e => e.Message)), Severity.Error);
+            }
+        }
+    }
 }

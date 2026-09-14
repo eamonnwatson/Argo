@@ -1,5 +1,3 @@
-@namespace Argo.WebApp.Components
-
 <div class="board">
     @foreach (var status in Statuses)
     {
@@ -16,7 +14,7 @@
                 @foreach (var project in Projects.Where(p => p.Status == status).OrderByDescending(p => PriorityRank(p.Priority)))
                 {
                     <MudCard Class="project-card" Outlined="true">
-                        <MudCardContent Class="pa-0" @onclick="() => OnSelect.InvokeAsync(project.Id)" Style="cursor:pointer;">
+                        <MudCardContent Class="pa-0" @onclick="() => OpenProjectDetails(project)" Style="cursor:pointer;">
                             <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="card-top">
                                 <span class="project-id">@project.Id</span>
                                 <MudStack Row="true" Spacing="1" Class="card-tags">
@@ -44,49 +42,3 @@
         </div>
     }
 </div>
-
-@code {
-    [Parameter] public List<ProjectDTO> Projects { get; set; } = [];
-    [Parameter] public string? SelectedProjectId { get; set; }
-    [Parameter] public EventCallback<string> OnSelect { get; set; }
-    [Parameter] public EventCallback<ProjectDTO> OnEdit { get; set; }
-    [Parameter] public EventCallback<ProjectDTO> OnDelete { get; set; }
-
-    private static readonly string[] Statuses = ["Waiting", "In Progress", "Done"];
-
-    private static readonly Dictionary<string, string> LaneHints = new()
-    {
-        ["Waiting"] = "Submitted, triaged, or queued for work",
-        ["In Progress"] = "Work is underway",
-        ["Done"] = "Deliverables accepted",
-    };
-
-    private static readonly Dictionary<string, int> PriorityRanks = new()
-    {
-        ["Needs Triage"] = 5,
-        ["Critical"] = 4,
-        ["High"] = 3,
-        ["Medium"] = 2,
-        ["Low"] = 1,
-    };
-
-    private static int PriorityRank(string priority) => PriorityRanks.GetValueOrDefault(priority, 0);
-
-    private static Color HealthColor(string health) => health switch
-    {
-        "On Track" => Color.Success,
-        "At Risk" => Color.Warning,
-        "Blocked" => Color.Error,
-        "Complete" => Color.Info,
-        _ => Color.Default,
-    };
-
-    private static Color PriorityColor(string priority) => priority switch
-    {
-        "Critical" => Color.Error,
-        "High" => Color.Error,
-        "Medium" => Color.Warning,
-        "Low" => Color.Default,
-        _ => Color.Default,
-    };
-}
