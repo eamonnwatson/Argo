@@ -68,6 +68,7 @@ public partial class Portfolio(IArgoService argoService, ISnackbar snackbar, IDi
                 snackbar.Add(string.Join("; ", created.Errors.Select(e => e.Message)), Severity.Error);
             }
         }
+
     }
 
     //private async Task SelectProject(string projectId)
