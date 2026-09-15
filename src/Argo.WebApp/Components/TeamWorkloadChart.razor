@@ -35,15 +35,15 @@
 </MudPaper>
 
 @code {
-    [Parameter] public List<ProjectDTO> Projects { get; set; } = [];
-    [Parameter] public List<UserDTO> Users { get; set; } = [];
+    [Parameter] public List<ProjectDto> Projects { get; set; } = [];
+    [Parameter] public List<UserDto> Users { get; set; } = [];
 
     private static readonly string[] Categories = ["Waiting", "In-Progress", "At-Risk", "Blocked", "Done"];
 
     private record OwnerSegment(string Category, int Count, double Percent);
     private record OwnerWorkload(string Owner, int Total, List<OwnerSegment> Segments);
 
-    private static string Categorize(ProjectDTO project)
+    private static string Categorize(ProjectDto project)
     {
         if (project.Health == "Blocked")
             return "Blocked";
@@ -67,8 +67,7 @@
             var byOwner = Projects.ToLookup(p => p.Owner);
 
             var owners = Users
-                .Where(u => u.IsProjectManager)
-                .Select(u => u.DisplayName)
+                .Select(u => u.Name)
                 .Union(Projects.Select(p => p.Owner))
                 .Distinct()
                 .ToList();
@@ -86,7 +85,7 @@
                         .ToList();
                     return new OwnerWorkload(owner, total, segments);
                 })
-                .OrderByDescending(g => g.Total)
+                .OrderBy(g => g.Owner != "Unassigned" ? 1 : 0)
                 .ThenBy(g => g.Owner)
                 .ToList();
         }
