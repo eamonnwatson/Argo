@@ -1,5 +1,5 @@
-using Argo.Application.Services;
-using Argo.Data;
+using Argo.Application;
+using Argo.Persistence;
 using Argo.WebApp.Components;
 using MudBlazor.Services;
 
@@ -15,8 +15,9 @@ builder.Services.AddRazorComponents()
 // Direct in-process access to Argo application/persistence services (no HTTP hop to Argo.Web).
 // Authentication is intentionally not wired up here; see plan follow-up task.
 var dbPath = builder.Configuration.GetConnectionString("ArgoDb") ?? Path.Combine(AppContext.BaseDirectory, "argo.db");
+
 builder.Services.AddArgoPersistence($"Data Source={dbPath}");
-builder.Services.AddTransient<IArgoService, ArgoService>();
+builder.Services.AddArgoAppliction();
 
 var app = builder.Build();
 
