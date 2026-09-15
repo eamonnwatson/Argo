@@ -1,7 +1,7 @@
-﻿using System.Reflection;
-using System.Runtime.ExceptionServices;
-using Argo.Application.Common.Errors;
+﻿using Argo.Application.Common.Errors;
 using FluentResults;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
 
 namespace Argo.Application.Common.Messaging;
 
@@ -16,15 +16,15 @@ internal class Dispatcher(IServiceProvider services) : IDispatcher
             var requestType = request.GetType();
             var handlerType = typeof(IRequestHandler<,>).MakeGenericType(requestType, typeof(TResponse));
             var handler = services.GetService(handlerType) ?? throw new InvalidOperationException($"Handler for request type {requestType.Name} not found.");
-            var method = handlerType.GetMethod(nameof(IRequestHandler<IRequest<TResponse>, TResponse>.HandleAsync)) ?? throw new InvalidOperationException($"HandleAsync method not found in handler type {handlerType.Name}.");
-            var task = (Task<TResponse>)method.Invoke(handler, new object[] { request, cancellationToken })!;
+            var method = handlerType.GetMethod(nameof(IRequestHandler<,>.HandleAsync)) ?? throw new InvalidOperationException($"HandleAsync method not found in handler type {handlerType.Name}.");
+            var task = (Task<TResponse>)method.Invoke(handler, [request, cancellationToken])!;
 
             return await task.ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            var actualException = ex is TargetInvocationException { InnerException: not null } targetInvocationException
-                ? targetInvocationException.InnerException
+            var actualException = ex is TargetInvocationException { InnerException: { } innerException }
+                ? innerException
                 : ex;
 
             if (TryCreateFailureResponse(actualException, out TResponse failureResponse))
@@ -56,7 +56,7 @@ internal class Dispatcher(IServiceProvider services) : IDispatcher
                     && method.GetParameters() is [{ ParameterType: var parameterType }]
                     && parameterType == typeof(IError));
 
-            response = (TResponse)failMethod.MakeGenericMethod(valueType).Invoke(null, new object[] { error })!;
+            response = (TResponse)failMethod.MakeGenericMethod(valueType).Invoke(null, [error])!;
             return true;
         }
 

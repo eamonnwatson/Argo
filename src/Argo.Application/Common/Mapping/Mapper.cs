@@ -40,7 +40,7 @@ internal class Mapper : IMapper
     {
         if (mappingFunctions.TryGetValue((sourceType, destinationType), out var mapFunction))
             return mapFunction(source);
-        
+
         throw new InvalidOperationException($"No mapping function registered for {sourceType.Name} to {destinationType.Name}");
     }
 
@@ -52,4 +52,5 @@ internal class Mapper : IMapper
         configure(mapper);
         return mapper;
     }
+
 }

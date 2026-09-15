@@ -1,5 +1,5 @@
-using Argo.Application.DTO;
 using Argo.Application.Common.Errors;
+using Argo.Application.DTO;
 using Argo.Application.Extensions;
 using Argo.Application.Repositories;
 using Argo.Domain.Entities;

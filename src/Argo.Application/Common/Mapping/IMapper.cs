@@ -1,4 +1,6 @@
-﻿namespace Argo.Application.Common.Mapping;
+﻿using System.Collections;
+
+namespace Argo.Application.Common.Mapping;
 
 internal interface IMapper
 {
