@@ -1,18 +1,18 @@
-using Argo.Application.DTO;
-using Argo.Application.Services;
-using Argo.WebApp.Components.Dialogs;
+using Argo.Application.Common.Messaging;
+using Argo.Application.Features.Projects;
+using Argo.Application.Features.Projects.Queries.GetProjects;
+using Argo.Application.Features.Users;
+using Argo.Application.Features.Users.Queries.GetProjectManagers;
 using MudBlazor;
 
 namespace Argo.WebApp.Components.Pages;
 
-public partial class Portfolio(IArgoService argoService, ISnackbar snackbar, IDialogService dialogService)
+public partial class Portfolio(IDispatcher dispatcher, ISnackbar snackbar, IDialogService dialogService)
 {
     private bool loading = true;
-    private List<ProjectDTO> projects = [];
-    private List<WorkItemDTO> workItems = [];
-    private List<ActivityDTO> activities = [];
-    private List<RaidItemDTO> raidItems = [];
-    private List<UserDTO> users = [];
+
+    private List<ProjectDto> projects = [];
+    private List<UserDto> users = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -22,54 +22,55 @@ public partial class Portfolio(IArgoService argoService, ISnackbar snackbar, IDi
     private async Task LoadDataAsync()
     {
         loading = true;
-        var projectsResult = await argoService.GetProjectsAsync();
-        if (projectsResult.IsSuccess)
-        {
-            var portfolio = PortfolioMapper.MapProjects(projectsResult.Value);
-            projects = portfolio.Projects.ToList();
-            workItems = portfolio.WorkItems.ToList();
-            activities = portfolio.Activities.ToList();
-            raidItems = portfolio.RaidItems.ToList();
-        }
-        else
-        {
-            snackbar.Add(string.Join("; ", projectsResult.Errors.Select(e => e.Message)), Severity.Error);
-        }
+        
+        var projectsResult = await dispatcher.SendAsync(new GetProjectsQuery());
 
-        var usersResult = await argoService.GetUsersAsync();
+        if (projectsResult.IsSuccess)
+            projects = projectsResult.Value.ToList();
+        else
+            snackbar.Add(projectsResult.Errors[0].Message, Severity.Error);
+
+        var usersResult = await dispatcher.SendAsync(new GetProjectManagersQuery());
+
         if (usersResult.IsSuccess)
-        {
-            users = usersResult.Value.Select(u => new UserDTO(u.Id.Value, u.DisplayName, u.IsProjectManager)).ToList();
-        }
+            users = usersResult.Value.ToList();
+        else
+            snackbar.Add(usersResult.Errors[0].Message, Severity.Error);
 
         loading = false;
     }
 
+
+
+
     private async Task OpenAddProjectDialog()
     {
-        var parameters = new DialogParameters<ProjectEditDialog>
-        {
-            { d => d.Users, users }
-        };
+        //var parameters = new DialogParameters<ProjectEditDialog>
+        //{
+        //    { d => d.Users, users }
+        //};
 
-        var dialog = await dialogService.ShowAsync<ProjectEditDialog>(parameters);
-        var dialogResult = await dialog.Result;
+        //var dialog = await dialogService.ShowAsync<ProjectEditDialog>(parameters);
+        //var dialogResult = await dialog.Result;
 
-        if (dialogResult is { Canceled: false, Data: ProjectCreateDTO createDto })
-        {
-            var created = await argoService.CreateProject(createDto);
-            if (created.IsSuccess)
-            {
-                snackbar.Add("Project created", Severity.Success);
-                await LoadDataAsync();
-            }
-            else
-            {
-                snackbar.Add(string.Join("; ", created.Errors.Select(e => e.Message)), Severity.Error);
-            }
-        }
+        //if (dialogResult is { Canceled: false, Data: ProjectCreateDTO createDto })
+        //{
+        //    var created = await argoService.CreateProject(createDto);
+            //if (created.IsSuccess)
+            //{
+                //snackbar.Add("Project created", Severity.Success);
+                //await LoadDataAsync();
+            //}
+            //else
+            //{
+                //snackbar.Add(string.Join("; ", created.Errors.Select(e => e.Message)), Severity.Error);
+            //}
+        //}
 
     }
+
+
+
 
     //private async Task SelectProject(string projectId)
     //{
