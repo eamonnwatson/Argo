@@ -1,4 +1,4 @@
-namespace Argo.Outbox;
+namespace Argo.Persistence.Outbox;
 
 /// <summary>
 /// Represents a persisted domain event awaiting asynchronous dispatch, guaranteeing that

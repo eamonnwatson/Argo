@@ -4,7 +4,7 @@ using Argo.Persistence.Common;
 using FluentResults;
 using Microsoft.EntityFrameworkCore;
 
-namespace Argo.Data.Repositories;
+namespace Argo.Persistence.Repositories;
 
 /// <summary>
 /// EF Core-backed repository for pending outbox messages.

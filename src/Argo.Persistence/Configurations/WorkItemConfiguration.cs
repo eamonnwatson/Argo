@@ -4,7 +4,7 @@ using Argo.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Argo.Data.Configurations;
+namespace Argo.Persistence.Configurations;
 
 /// <summary>
 /// Configures EF Core mapping for the <see cref="WorkItem"/> entity.

@@ -1,11 +1,10 @@
-using Argo.Data.Configurations;
 using Argo.Domain.Entities;
 using Argo.Domain.Interfaces;
-using Argo.Outbox;
+using Argo.Persistence.Outbox;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
-namespace Argo.Data;
+namespace Argo.Persistence;
 
 /// <summary>
 /// Represents the Entity Framework Core database context for Argo domain data.
@@ -53,12 +52,7 @@ internal class ArgoDbContext(DbContextOptions<ArgoDbContext> options) : DbContex
     /// <param name="modelBuilder">The builder used to configure EF Core entity mappings.</param>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfiguration(new ProjectConfiguration());
-        modelBuilder.ApplyConfiguration(new WorkItemConfiguration());
-        modelBuilder.ApplyConfiguration(new ActivityConfiguration());
-        modelBuilder.ApplyConfiguration(new RaidItemConfiguration());
-        modelBuilder.ApplyConfiguration(new UserConfiguration());
-        modelBuilder.ApplyConfiguration(new OutboxMessageConfiguration());
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ArgoDbContext).Assembly);
     }
 
     /// <summary>

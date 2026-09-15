@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace Argo.Data;
+namespace Argo.Persistence;
 
 /// <summary>
 /// Enables EF Core design-time tooling (migrations) to construct an <see cref="ArgoDbContext"/>

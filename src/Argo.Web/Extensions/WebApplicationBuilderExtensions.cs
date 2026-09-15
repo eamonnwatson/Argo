@@ -1,8 +1,8 @@
 using Argo.Application.Notifications;
 using Argo.Application.Outbox;
 using Argo.Application.Services;
-using Argo.Data;
 using Argo.Infrastructure.Email;
+using Argo.Persistence;
 using Argo.Web.Outbox;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.Authorization;
