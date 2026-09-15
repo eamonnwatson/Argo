@@ -20,8 +20,8 @@
     <MudItem xs="12" sm="4">
         <MudPaper Class="pa-4 stat-card" Elevation="0">
             <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                <MudText Typo="Typo.body2" Class="stat-label">Done</MudText>
-                <MudText Typo="Typo.h5" Class="stat-value">@CountDone</MudText>
+                <MudText Typo="Typo.body2" Class="stat-label">Completed</MudText>
+                <MudText Typo="Typo.h5" Class="stat-value">@CountCompleted</MudText>
             </MudStack>
         </MudPaper>
     </MudItem>
@@ -30,5 +30,5 @@
 @code {
     [Parameter] public int CountWaiting { get; set; } = 0;
     [Parameter] public int CountInProgress { get; set; } = 0;
-    [Parameter] public int CountDone { get; set; } = 0;
+    [Parameter] public int CountCompleted { get; set; } = 0;
 }

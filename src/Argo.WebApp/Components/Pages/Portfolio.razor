@@ -11,10 +11,13 @@
     <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
 }
 else
-{
-    <PortfolioSummary CountWaiting="@projects.Count(p => p.Status == "Waiting")" CountInProgress="@projects.Count(p => p.Status == "In Progress")" CountDone="@projects.Count(p => p.Status == "Done")" />
+{    
+    <PortfolioSummary CountWaiting="@projects.Count(p => p.Status == "Waiting")" CountInProgress="@projects.Count(p => p.Status == "In Progress")" CountCompleted="@projects.Count(p => p.Status == "Completed")" />
 
+    
     <TeamWorkloadChart Projects="projects" Users="users" />
 
+    <!--
     <PortfolioBoard Projects="projects" Activities="activities" WorkItems="workItems" RaidItems="raidItems" />
+    -->
 }
