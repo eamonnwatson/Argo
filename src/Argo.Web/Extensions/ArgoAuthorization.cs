@@ -32,22 +32,42 @@ public sealed class ArgoUserAuthorizationHandler(IUserRepository userRepository)
     /// <returns>A task that completes once the requirement has been evaluated.</returns>
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, ArgoUserRequirement requirement)
     {
-        var user = context.User?.Identity?.Name;
-        if (string.IsNullOrWhiteSpace(user))
+        var userId = ArgoUserIdentity.GetUserId(context.User);
+        if (userId is null)
             return;
+
+        var existsResult = await userRepository.GetByIdAsync(userId.Value);
+        if (existsResult.IsSuccess && existsResult.Value is not null)
+            context.Succeed(requirement);
+    }
+}
+
+/// <summary>
+/// Provides shared helpers for resolving the Argo <see cref="UserId"/> associated with the
+/// current authenticated Windows principal.
+/// </summary>
+public static class ArgoUserIdentity
+{
+    /// <summary>
+    /// Normalizes a domain-qualified identity name (e.g. <c>DOMAIN\username</c>) to a
+    /// <see cref="UserId"/> matching the stored <c>DomainID</c> account name segment.
+    /// </summary>
+    /// <param name="principal">The current claims principal, typically <c>HttpContext.User</c>.</param>
+    /// <returns>The resolved <see cref="UserId"/>, or <see langword="null"/> if no identity name is present.</returns>
+    public static UserId? GetUserId(System.Security.Claims.ClaimsPrincipal? principal)
+    {
+        var user = principal?.Identity?.Name;
+        if (string.IsNullOrWhiteSpace(user))
+            return null;
 
         var separatorIndex = user.LastIndexOf('\\');
         if (separatorIndex >= 0)
             user = user[(separatorIndex + 1)..];
 
         if (string.IsNullOrWhiteSpace(user))
-            return;
+            return null;
 
-        var userId = UserId.FromTrustedValue(user);
-
-        var existsResult = await userRepository.GetByIdAsync(userId);
-        if (existsResult.IsSuccess && existsResult.Value is not null)
-            context.Succeed(requirement);
+        return UserId.FromTrustedValue(user);
     }
 }
 

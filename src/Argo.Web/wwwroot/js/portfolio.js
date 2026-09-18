@@ -181,6 +181,15 @@
     async function refresh() {
         data = await loadPortfolio();
     }
+    async function loadCurrentUser() {
+        try {
+            var name = await apiGet("/users/me");
+            var el = document.getElementById("current-user-name");
+            if (el) el.textContent = name || "";
+        } catch (error) {
+            console.error(error);
+        }
+    }
     async function loadTeamMembers() {
         try {
             var users = await apiGet("/users?projectManagersOnly=true");
@@ -824,6 +833,7 @@
 
     async function init() {
         try {
+            loadCurrentUser();
             await loadTeamMembers();
             var ingestResult = await apiSend("POST", "/portfolio/ingest");
             await refresh();

@@ -35,6 +35,12 @@ public static class ApiEndpoints
                 .ToResultsAsync())
             .AllowAnonymous();
 
+        api.MapGet("/users/me", (HttpContext httpContext) =>
+        {
+            var name = httpContext.User.Identity?.Name;
+            return string.IsNullOrWhiteSpace(name) ? Results.Unauthorized() : Results.Ok(name);
+        });
+
         api.MapGet("/users", async (bool? projectManagersOnly, IArgoService argoService) =>
             await argoService.GetUsersAsync(projectManagersOnly ?? false)
                 .MapAsync(users => users.Select(u => new UserDTO(u.Id.Value, u.DisplayName, u.IsProjectManager)).ToList())
