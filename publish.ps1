@@ -1,4 +1,4 @@
-$version = "1.0"
+$version = "1.2"
 $build = "{0}{1:000}" -f ((Get-Date).Year % 100), (Get-Date).DayOfYear
 $today = (Get-Date).ToString("yyyyMMdd")
 

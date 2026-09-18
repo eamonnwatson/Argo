@@ -2,6 +2,7 @@
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
     <File Path="Directory.Packages.props" />
+    <File Path="publish.ps1" />
   </Folder>
   <Project Path="src/Argo.Application/Argo.Application.csproj" Id="8f04f3df-064d-4b38-9f13-75ca58c6db80" />
   <Project Path="src/Argo.Domain/Argo.Domain.csproj" />
