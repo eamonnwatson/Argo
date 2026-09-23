@@ -23,7 +23,9 @@ internal class ProjectRepository(ArgoDbContext dbContext) : BaseRepository, IPro
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken));
 
     public Task<Result<IReadOnlyCollection<Project>>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        ExecuteAsync(async () => (IReadOnlyCollection<Project>)await dbContext.Projects.ToListAsync(cancellationToken));
+        ExecuteAsync(async () => (IReadOnlyCollection<Project>)await dbContext.Projects
+            .Include(p => p.Owner)
+            .ToListAsync(cancellationToken));
 
     public Task<Result<IReadOnlyCollection<Project>>> GetAllWithDetailsAsync(CancellationToken cancellationToken = default) =>
         ExecuteAsync(async () => (IReadOnlyCollection<Project>)await dbContext.Projects.AsNoTracking()

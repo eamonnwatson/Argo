@@ -40,7 +40,7 @@ public static class DependencyInjection
 
         foreach (var moduleType in moduleTypes)
         {
-            var serviceInterfaces =  moduleType.GetInterfaces()
+            var serviceInterfaces = moduleType.GetInterfaces()
                 .Where(type => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IRequestHandler<,>));
 
             foreach (var serviceType in serviceInterfaces)
