@@ -1,7 +1,4 @@
 @namespace Argo.WebApp.Components
-@using Argo.Application.DTO
-@using Argo.Application.Services
-@using Argo.WebApp.Components.Dialogs
 
 <MudContainer Fixed="true" Class="pa-0">
     <MudPaper Class="detail-panel" Elevation="0">
@@ -70,24 +67,24 @@
                 <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add">Add wave</MudButton>
             </div>
 
-            @if (WorkItems.Count == 0)
+            @if (workItems.Count == 0)
             {
                 <div class="empty-hint">No work packages yet.</div>
             }
             else
             {
                 <div class="work-list">
-                    @foreach (var item in WorkItems)
+                    @foreach (var item in workItems)
                     {
-                        var expanded = expandedWorkItemIds.Contains(item.Id);
-                        var (done, total) = ActivityProgress(item.Id);
+                        var expanded = expandedWorkItemIds.Contains(item.WorkItemId);
+                        var (done, total) = ActivityProgress(item.WorkItemId);
                         <div class="@($"work-package {(expanded ? "expanded" : "")}")">
                             <div class="work-summary">
-                                <button class="work-toggle" type="button" @onclick="() => ToggleWorkItem(item.Id)">
+                                <button class="work-toggle" type="button" @onclick="() => ToggleWorkItem(item.WorkItemId)">
                                     <span class="chevron">&rsaquo;</span>
                                     <span>
                                         <span class="work-title">@item.Title</span>
-                                        <span class="work-subtext">@item.Id &middot; @done/@total activities complete</span>
+                                        <span class="work-subtext">@item.WorkItemId &middot; @done/@total activities complete</span>
                                     </span>
                                 </button>
                                 <div>
@@ -119,14 +116,14 @@
                 <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add">Add record</MudButton>
             </div>
 
-            @if (RaidItems.Count == 0)
+            @if (raidItems.Count == 0)
             {
                 <div class="empty-hint">No RAID records yet.</div>
             }
             else
             {
                 <div class="raid-list">
-                    @foreach (var r in RaidItems)
+                    @foreach (var r in raidItems)
                     {
                         <div class="raid-card">
                             <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@r.Type</MudChip>
@@ -149,108 +146,3 @@
         </MudStack>
     </MudPaper>
 </MudContainer>
-
-
-@code {
-
-    [Inject] private IDialogService DialogService { get; set; } = default!;
-    [Inject] private IArgoService ArgoService { get; set; } = default!;
-    [Inject] private ISnackbar Snackbar { get; set; } = default!;
-
-    [CascadingParameter] private IMudDialogInstance? MudDialog { get; set; }
-
-    [Parameter] public ProjectDTO Project { get; set; } = null!;
-    [Parameter] public List<WorkItemDTO> WorkItems { get; set; } = [];
-    [Parameter] public List<ActivityDTO> Activities { get; set; } = [];
-    [Parameter] public List<RaidItemDTO> RaidItems { get; set; } = [];
-    [Parameter] public List<UserDTO> Users { get; set; } = [];
-
-    private readonly HashSet<string> expandedWorkItemIds = [];
-    private bool intakeExpanded;
-
-    private int WavesTotal => WorkItems.Count;
-    private int WavesDone => WorkItems.Count(w => w.Status == "Done");
-    private int WavesCompletedPercent => WavesTotal == 0 ? 0 : (int)Math.Round(100.0 * WavesDone / WavesTotal);
-
-    private void ToggleIntakeDetails() => intakeExpanded = !intakeExpanded;
-
-    private void ToggleWorkItem(string id)
-    {
-        if (!expandedWorkItemIds.Add(id))
-        {
-            expandedWorkItemIds.Remove(id);
-        }
-    }
-
-    private (int Done, int Total) ActivityProgress(string workItemId)
-    {
-        var forItem = Activities.Where(a => a.WorkItemId == workItemId).ToList();
-        return (forItem.Count(a => a.Status == "Done"), forItem.Count);
-    }
-
-    private static Color HealthColor(string health) => health switch
-    {
-        "On Track" => Color.Success,
-        "At Risk" => Color.Warning,
-        "Blocked" => Color.Error,
-        "Complete" => Color.Info,
-        "Not Assessed" => Color.Dark,
-        _ => Color.Default,
-    };
-
-    private static Color ProjectStatusColor(string status) => status switch
-    {
-        "Done" => Color.Success,
-        "In Progress" => Color.Warning,
-        "Blocked" => Color.Error,
-        "Waiting" => Color.Info,
-        _ => Color.Default,
-    };
-
-    private static Color PriorityColor(string priority) => priority switch
-    {
-        "Critical" => Color.Error,
-        "High" => Color.Error,
-        "Medium" => Color.Warning,
-        "Low" => Color.Default,
-        _ => Color.Default,
-    };
-
-    private static Color WorkStatusColor(string status) => status switch
-    {
-        "Done" => Color.Success,
-        "In Progress" => Color.Info,
-        "Blocked" => Color.Error,
-        "Waiting" => Color.Warning,
-        _ => Color.Default,
-    };
-
-    private void CloseDialog() => MudDialog?.Cancel();
-
-    private async Task EditProject()
-    {
-        var parameters = new DialogParameters<ProjectEditDialog>
-        {
-            { d => d.Users, Users },
-            { d => d.Project, Project }
-        };
-
-        var dialog = await DialogService.ShowAsync<ProjectEditDialog>(parameters);
-        var dialogResult = await dialog.Result;
-
-        if (dialogResult is { Canceled: false, Data: ProjectDTO updatedProject })
-        {
-            var saved = await ArgoService.UpdateProject(updatedProject.Id, updatedProject);
-            if (saved.IsSuccess)
-            {
-                Snackbar.Add("Project saved", Severity.Success);
-                Project = updatedProject;
-                StateHasChanged();
-            }
-            else
-            {
-                Snackbar.Add(string.Join("; ", saved.Errors.Select(e => e.Message)), Severity.Error);
-            }
-        }
-    }
-}

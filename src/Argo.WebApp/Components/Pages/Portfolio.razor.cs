@@ -3,12 +3,17 @@ using Argo.Application.Features.Projects;
 using Argo.Application.Features.Projects.Queries.GetProjects;
 using Argo.Application.Features.Users;
 using Argo.Application.Features.Users.Queries.GetProjectManagers;
+using Argo.WebApp.Infrastructure;
+using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
 namespace Argo.WebApp.Components.Pages;
 
-public partial class Portfolio(IDispatcher dispatcher, ISnackbar snackbar, IDialogService dialogService)
+public partial class Portfolio
 {
+    [Inject] private IDispatcher Dispatcher { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
     private bool loading = true;
 
     private List<ProjectDto> projects = [];
@@ -22,20 +27,20 @@ public partial class Portfolio(IDispatcher dispatcher, ISnackbar snackbar, IDial
     private async Task LoadDataAsync()
     {
         loading = true;
-        
-        var projectsResult = await dispatcher.SendAsync(new GetProjectsQuery());
 
-        if (projectsResult.IsSuccess)
-            projects = projectsResult.Value.ToList();
-        else
-            snackbar.Add(projectsResult.Errors[0].Message, Severity.Error);
+        var projectsResult = await Dispatcher.SendAsync(new GetProjectsQuery());
 
-        var usersResult = await dispatcher.SendAsync(new GetProjectManagersQuery());
+        if (projectsResult.ShowErrorsIfFailed(Snackbar))
+            return;
 
-        if (usersResult.IsSuccess)
-            users = usersResult.Value.ToList();
-        else
-            snackbar.Add(usersResult.Errors[0].Message, Severity.Error);
+        projects = projectsResult.Value.ToList();
+
+        var usersResult = await Dispatcher.SendAsync(new GetProjectManagersQuery());
+
+        if (usersResult.ShowErrorsIfFailed(Snackbar))
+            return;
+
+        users = usersResult.Value.ToList();
 
         loading = false;
     }
@@ -56,15 +61,15 @@ public partial class Portfolio(IDispatcher dispatcher, ISnackbar snackbar, IDial
         //if (dialogResult is { Canceled: false, Data: ProjectCreateDTO createDto })
         //{
         //    var created = await argoService.CreateProject(createDto);
-            //if (created.IsSuccess)
-            //{
-                //snackbar.Add("Project created", Severity.Success);
-                //await LoadDataAsync();
-            //}
-            //else
-            //{
-                //snackbar.Add(string.Join("; ", created.Errors.Select(e => e.Message)), Severity.Error);
-            //}
+        //if (created.IsSuccess)
+        //{
+        //snackbar.Add("Project created", Severity.Success);
+        //await LoadDataAsync();
+        //}
+        //else
+        //{
+        //snackbar.Add(string.Join("; ", created.Errors.Select(e => e.Message)), Severity.Error);
+        //}
         //}
 
     }
@@ -174,6 +179,7 @@ public partial class Portfolio(IDispatcher dispatcher, ISnackbar snackbar, IDial
     //        var saved = await ArgoService.UpdateProject(project.Id, updated);
     //        if (saved.IsSuccess)
     //        {
+
     //            Snackbar.Add("Project saved", Severity.Success);
     //            await LoadDataAsync();
     //        }

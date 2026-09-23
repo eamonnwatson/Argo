@@ -1,4 +1,4 @@
-using Argo.Application.DTO;
+using Argo.Application.Features.Projects;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -6,10 +6,7 @@ namespace Argo.WebApp.Components;
 
 public partial class PortfolioBoard(IDialogService dialogService)
 {
-    [Parameter] public List<ProjectDTO> Projects { get; set; } = [];
-    [Parameter] public List<ActivityDTO> Activities { get; set; } = [];
-    [Parameter] public List<WorkItemDTO> WorkItems { get; set; } = [];
-    [Parameter] public List<RaidItemDTO> RaidItems { get; set; } = [];
+    [Parameter] public List<ProjectDto> Projects { get; set; } = [];
     private static readonly string[] Statuses = ["Waiting", "In Progress", "Done"];
 
     private static readonly Dictionary<string, string> LaneHints = new()
@@ -30,6 +27,7 @@ public partial class PortfolioBoard(IDialogService dialogService)
 
     private static int PriorityRank(string priority) => PriorityRanks.GetValueOrDefault(priority, 0);
 
+
     private static Color HealthColor(string health) => health switch
     {
         "On Track" => Color.Success,
@@ -48,7 +46,7 @@ public partial class PortfolioBoard(IDialogService dialogService)
         _ => Color.Default,
     };
 
-    private async Task OpenProjectDetails(ProjectDTO project)
+    private async Task OpenProjectDetails(ProjectDto project)
     {
         var options = new DialogOptions
         {
@@ -60,14 +58,43 @@ public partial class PortfolioBoard(IDialogService dialogService)
 
         var parameters = new DialogParameters<PortfolioDetailDialog>
         {
-            { d => d.Project, project },
-            { d => d.Activities, Activities.Where(a => a.ProjectId == project.Id).ToList() },
-            { d => d.WorkItems, WorkItems.Where(a => a.ProjectId == project.Id).ToList() },
-            { d => d.RaidItems, RaidItems.Where(a => a.ProjectId == project.Id).ToList() }
+            { d => d.Project, project }
         };
 
-        await dialogService.ShowAsync<PortfolioDetailDialog>(parameters, options);
+        var dialog = await dialogService.ShowAsync<PortfolioDetailDialog>(parameters, options);
+        var dialogResult = await dialog.Result;
+
     }
 
 
+    /*    [Parameter] public List<ActivityDTO> Activities { get; set; } = [];
+        [Parameter] public List<WorkItemDTO> WorkItems { get; set; } = [];
+        [Parameter] public List<RaidItemDTO> RaidItems { get; set; } = [];
+
+
+
+
+
+        private async Task OpenProjectDetails(ProjectDTO project)
+        {
+            var options = new DialogOptions
+            {
+                FullWidth = false,
+                MaxWidth = MaxWidth.False,
+                NoHeader = true,
+                CloseButton = false
+            };
+
+            var parameters = new DialogParameters<PortfolioDetailDialog>
+            {
+                { d => d.Project, project },
+                { d => d.Activities, Activities.Where(a => a.ProjectId == project.Id).ToList() },
+                { d => d.WorkItems, WorkItems.Where(a => a.ProjectId == project.Id).ToList() },
+                { d => d.RaidItems, RaidItems.Where(a => a.ProjectId == project.Id).ToList() }
+            };
+
+            await dialogService.ShowAsync<PortfolioDetailDialog>(parameters, options);
+        }
+
+    */
 }
