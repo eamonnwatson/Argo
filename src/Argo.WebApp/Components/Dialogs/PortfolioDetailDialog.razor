@@ -59,11 +59,12 @@
 
     <MudGrid Class="pa-4">
         <MudItem xs="12" md="7">
-            <div class="section-title">
-                <div>
+            <div class="d-flex align-start justify-space-between">
+                <div class="section-title">
                     <MudText Typo="Typo.subtitle1">Work packages and waves</MudText>
                     <MudText Typo="Typo.caption">Expand each item for participants, inputs, milestones, and completion criteria.</MudText>
                 </div>
+            
                 <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add">Add wave</MudButton>
             </div>
 
@@ -108,14 +109,13 @@
         </MudItem>
 
         <MudItem xs="12" md="5">
-            <div class="section-title">
-                <div>
+            <div class="d-flex align-start justify-space-between">
+                <div class="section-title">
                     <MudText Typo="Typo.subtitle1">RAID and decisions</MudText>
                     <MudText Typo="Typo.caption">What needs attention or leadership input.</MudText>
                 </div>
                 <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add">Add record</MudButton>
             </div>
-
             @if (raidItems.Count == 0)
             {
                 <div class="empty-hint">No RAID records yet.</div>
