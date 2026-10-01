@@ -21,29 +21,29 @@ public static class ApiEndpoints
     /// </remarks>
     public static WebApplication MapArgoApi(this WebApplication app)
     {
-        var api = app.MapGroup("/api/v1").RequireAuthorization("ArgoUser");
+        var api = app.MapGroup("/api/v1");
+        var identityApi = api.MapGroup(string.Empty).RequireAuthorization();
+        var argoApi = api.MapGroup(string.Empty).RequireAuthorization("ArgoUser");
 
-        api.MapGet("/portfolio", async (IArgoService argoService) =>
+        argoApi.MapGet("/portfolio", async (IArgoService argoService) =>
             await argoService
                 .GetProjectsAsync()
                 .MapAsync(MapProjects)
                 .ToResultsAsync());
 
-        api.MapPost("/portfolio/ingest", async (IArgoService argoService) =>
+        argoApi.MapPost("/portfolio/ingest", async (IArgoService argoService) =>
             await argoService.InjectAsync()
                 .MapAsync(result => new IngestDTO(result.Count, result.FirstProjectId))
                 .ToResultsAsync())
             .AllowAnonymous();
 
-        // Identity endpoints bypass the ArgoUser policy so a signed-in user who is not
-        // in the Argo user table can still see who the server thinks they are.
-        api.MapGet("/users/me", (HttpContext httpContext) =>
+        identityApi.MapGet("/users/me", (HttpContext httpContext) =>
         {
             var name = httpContext.User.Identity?.Name;
             return string.IsNullOrWhiteSpace(name) ? Results.Unauthorized() : Results.Ok(name);
-        }).AllowAnonymous();
+        });
 
-        api.MapGet("/whoami", async (HttpContext httpContext, Argo.Application.Repositories.IUserRepository userRepository) =>
+        identityApi.MapGet("/whoami", async (HttpContext httpContext, Argo.Application.Repositories.IUserRepository userRepository) =>
         {
             var user = httpContext.User;
             var candidates = ArgoUserIdentity.GetCandidateNames(user);
@@ -67,41 +67,41 @@ public static class ApiEndpoints
                 matchedUserId = matched,
                 claims = user.Claims.Select(c => new { c.Type, c.Value }).Where(c => !c.Type.EndsWith("/groupsid") && !c.Type.EndsWith("/denyonlysid"))
             });
-        }).AllowAnonymous();
+        });
 
-        api.MapGet("/users", async (bool? projectManagersOnly, IArgoService argoService) =>
+        argoApi.MapGet("/users", async (bool? projectManagersOnly, IArgoService argoService) =>
             await argoService.GetUsersAsync(projectManagersOnly ?? false)
                 .MapAsync(users => users.Select(u => new UserDTO(u.Id.Value, u.DisplayName, u.IsProjectManager)).ToList())
                 .ToResultsAsync());
 
-        api.MapPost("/projects", async (ProjectCreateDTO dto, IArgoService argoService) =>
+        argoApi.MapPost("/projects", async (ProjectCreateDTO dto, IArgoService argoService) =>
             await argoService.CreateProject(dto).ToResultsAsync());
 
-        api.MapPut("/projects/{id}", async (string id, ProjectDTO dto, IArgoService argoService) =>
+        argoApi.MapPut("/projects/{id}", async (string id, ProjectDTO dto, IArgoService argoService) =>
             await argoService.UpdateProject(id, dto).ToResultsAsync());
 
-        api.MapDelete("/projects/{id}", async (string id, IArgoService argoService) =>
+        argoApi.MapDelete("/projects/{id}", async (string id, IArgoService argoService) =>
             await argoService.DeleteProject(id).ToResultsAsync());
 
-        api.MapPost("/workitems", async (WorkItemCreateDTO dto, IArgoService argoService) =>
+        argoApi.MapPost("/workitems", async (WorkItemCreateDTO dto, IArgoService argoService) =>
             await argoService.CreateWorkItem(dto).ToResultsAsync());
 
-        api.MapPut("/workitems/{id}", async (string id, WorkItemDTO dto, IArgoService argoService) =>
+        argoApi.MapPut("/workitems/{id}", async (string id, WorkItemDTO dto, IArgoService argoService) =>
             await argoService.UpdateWorkItem(id, dto).ToResultsAsync());
 
-        api.MapPost("/activities", async (ActivityCreateDTO dto, IArgoService argoService) =>
+        argoApi.MapPost("/activities", async (ActivityCreateDTO dto, IArgoService argoService) =>
             await argoService.CreateActivity(dto).ToResultsAsync());
 
-        api.MapPut("/activities/{id}", async (string id, ActivityDTO dto, IArgoService argoService) =>
+        argoApi.MapPut("/activities/{id}", async (string id, ActivityDTO dto, IArgoService argoService) =>
             await argoService.UpdateActivity(id, dto).ToResultsAsync());
 
-        api.MapPost("/raid", async (RaidItemCreateDTO dto, IArgoService argoService) =>
+        argoApi.MapPost("/raid", async (RaidItemCreateDTO dto, IArgoService argoService) =>
             await argoService.CreateRaidItem(dto).ToResultsAsync());
 
-        api.MapPut("/raid/{id}", async (string id, RaidItemDTO dto, IArgoService argoService) =>
+        argoApi.MapPut("/raid/{id}", async (string id, RaidItemDTO dto, IArgoService argoService) =>
             await argoService.UpdateRaidItem(id, dto).ToResultsAsync());
 
-        api.MapPost("/intake-submissions", async (IntakeSubmissionDTO dto, IArgoService argoService) =>
+        argoApi.MapPost("/intake-submissions", async (IntakeSubmissionDTO dto, IArgoService argoService) =>
             await argoService.SaveIntakeSubmission(dto).ToResultsAsync())
             .AllowAnonymous();
 
