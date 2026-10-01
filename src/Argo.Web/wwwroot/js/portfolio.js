@@ -182,12 +182,20 @@
         data = await loadPortfolio();
     }
     async function loadCurrentUser() {
+        var el = document.getElementById("current-user-name");
         try {
-            var name = await apiGet("/users/me");
-            var el = document.getElementById("current-user-name");
-            if (el) el.textContent = name || "";
+            var info = await apiGet("/whoami");
+            if (!el) return;
+            if (!info.isAuthenticated || !info.name) {
+                el.textContent = "Not signed in (" + (info.authenticationType || "no auth") + ")";
+            } else if (!info.matchedUserId) {
+                el.textContent = info.name + " (no Argo account - tried: " + (info.candidates || []).join(", ") + "; auth: " + (info.authenticationType || "?") + ")";
+            } else {
+                el.textContent = info.name;
+            }
         } catch (error) {
             console.error(error);
+            if (el) el.textContent = "Unable to determine user";
         }
     }
     async function loadTeamMembers() {

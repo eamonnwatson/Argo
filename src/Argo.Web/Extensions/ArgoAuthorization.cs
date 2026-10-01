@@ -22,7 +22,7 @@ public sealed class ArgoUserRequirement : IAuthorizationRequirement
 /// account name segment before comparison with stored <c>DomainID</c> values, matching
 /// the lookup previously performed inline within <c>ArgoService.CheckAuthorized</c>.
 /// </remarks>
-public sealed class ArgoUserAuthorizationHandler(IUserRepository userRepository) : AuthorizationHandler<ArgoUserRequirement>
+public sealed class ArgoUserAuthorizationHandler(IUserRepository userRepository, ILogger<ArgoUserAuthorizationHandler> logger) : AuthorizationHandler<ArgoUserRequirement>
 {
     /// <summary>
     /// Evaluates whether the current user satisfies the <see cref="ArgoUserRequirement"/>.
@@ -32,13 +32,25 @@ public sealed class ArgoUserAuthorizationHandler(IUserRepository userRepository)
     /// <returns>A task that completes once the requirement has been evaluated.</returns>
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, ArgoUserRequirement requirement)
     {
-        var userId = ArgoUserIdentity.GetUserId(context.User);
-        if (userId is null)
+        var identity = context.User.Identity;
+        var candidates = ArgoUserIdentity.GetCandidateNames(context.User);
+        if (candidates.Count == 0)
+        {
+            logger.LogWarning("Access denied: no identity name. Authenticated={IsAuthenticated}, AuthType={AuthType}", identity?.IsAuthenticated, identity?.AuthenticationType);
             return;
+        }
 
-        var existsResult = await userRepository.GetByIdAsync(userId.Value);
-        if (existsResult.IsSuccess && existsResult.Value is not null)
-            context.Succeed(requirement);
+        foreach (var candidate in candidates)
+        {
+            var existsResult = await userRepository.GetByIdAsync(UserId.FromTrustedValue(candidate));
+            if (existsResult.IsSuccess && existsResult.Value is not null)
+            {
+                context.Succeed(requirement);
+                return;
+            }
+        }
+
+        logger.LogWarning("Access denied: user not found. Identity={Name}, AuthType={AuthType}, Tried=[{Candidates}]", identity?.Name, identity?.AuthenticationType, string.Join(", ", candidates));
     }
 }
 
@@ -54,6 +66,30 @@ public static class ArgoUserIdentity
     /// </summary>
     /// <param name="principal">The current claims principal, typically <c>HttpContext.User</c>.</param>
     /// <returns>The resolved <see cref="UserId"/>, or <see langword="null"/> if no identity name is present.</returns>
+    public static List<string> GetCandidateNames(System.Security.Claims.ClaimsPrincipal? principal)
+    {
+        var result = new List<string>();
+        var name = principal?.Identity?.Name;
+        if (string.IsNullOrWhiteSpace(name))
+            return result;
+
+        var account = name;
+        var separatorIndex = account.LastIndexOf('\\');
+        if (separatorIndex >= 0)
+            account = account[(separatorIndex + 1)..];
+
+        var atIndex = account.IndexOf('@');
+        var local = atIndex > 0 ? account[..atIndex] : account;
+
+        foreach (var candidate in new[] { account, local, name })
+        {
+            if (!string.IsNullOrWhiteSpace(candidate) && !result.Contains(candidate, StringComparer.OrdinalIgnoreCase))
+                result.Add(candidate);
+        }
+
+        return result;
+    }
+
     public static UserId? GetUserId(System.Security.Claims.ClaimsPrincipal? principal)
     {
         var user = principal?.Identity?.Name;

@@ -35,11 +35,39 @@ public static class ApiEndpoints
                 .ToResultsAsync())
             .AllowAnonymous();
 
+        // Identity endpoints bypass the ArgoUser policy so a signed-in user who is not
+        // in the Argo user table can still see who the server thinks they are.
         api.MapGet("/users/me", (HttpContext httpContext) =>
         {
             var name = httpContext.User.Identity?.Name;
             return string.IsNullOrWhiteSpace(name) ? Results.Unauthorized() : Results.Ok(name);
-        });
+        }).AllowAnonymous();
+
+        api.MapGet("/whoami", async (HttpContext httpContext, Argo.Application.Repositories.IUserRepository userRepository) =>
+        {
+            var user = httpContext.User;
+            var candidates = ArgoUserIdentity.GetCandidateNames(user);
+            string? matched = null;
+            foreach (var candidate in candidates)
+            {
+                var result = await userRepository.GetByIdAsync(Argo.Domain.ValueObjects.UserId.FromTrustedValue(candidate));
+                if (result.IsSuccess && result.Value is not null)
+                {
+                    matched = candidate;
+                    break;
+                }
+            }
+
+            return Results.Ok(new
+            {
+                isAuthenticated = user.Identity?.IsAuthenticated ?? false,
+                authenticationType = user.Identity?.AuthenticationType,
+                name = user.Identity?.Name,
+                candidates,
+                matchedUserId = matched,
+                claims = user.Claims.Select(c => new { c.Type, c.Value }).Where(c => !c.Type.EndsWith("/groupsid") && !c.Type.EndsWith("/denyonlysid"))
+            });
+        }).AllowAnonymous();
 
         api.MapGet("/users", async (bool? projectManagersOnly, IArgoService argoService) =>
             await argoService.GetUsersAsync(projectManagersOnly ?? false)
